@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>原神傷害計算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .language-buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .language-buttons button {
+            margin: 0 10px;
+            padding: 5px 10px;
+            font-size: 16px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: auto;
+        }
+        .input-section, .output-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .input-section {
+            border-right: 1px solid #ddd;
+        }
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .input-group label {
+            flex: 1 0 120px;
+            margin-right: 10px;
+            padding-top: 5px;
+        }
+        .input-group input {
+            flex: 1 0 150px;
+            padding: 5px;
+        }
+        .input-group select {
+            flex: 1 0 150px;
+            padding: 5px;
+        }
+        .button {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .button button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .results h2 {
+            text-align: center;
+        }
+        .results table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .results th, .results td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .results th {
+            background-color: #f2f2f2;
+        }
+        @media (max-width: 800px) {
+            .container {
+                flex-direction: column;
+            }
+            .input-section, .output-section {
+                min-width: 100%;
+            }
+            .input-group label, .input-group input {
+                flex: 1 0 100%;
+            }
+            .input-group label {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 data-key="title">原神傷害計算器</h1>
+    <div class="language-buttons">
+        <button onclick="setLanguage('zh')">中文</button>
+        <button onclick="setLanguage('en')">English</button>
+        <button onclick="setLanguage('ja')">日本語</button>
+    </div>
+    <div class="container">
+        <div class="input-section">
+            <h2 data-key="input_parameters">輸入參數</h2>
+            <div class="input-group">
+                <label for="attack_power" data-key="attack_power">攻擊力:</label>
+                <input type="number" id="attack_power" value="2000">
+            </div>
+            <div class="input-group">
+                <label for="skill_multiplier" data-key="skill_multiplier">技能倍率 (%):</label>
+                <input type="number" id="skill_multiplier" value="200">
+            </div>
+            <div class="input-group">
+                <label for="character_level" data-key="character_level">角色等級:</label>
+                <input type="number" id="character_level" value="90">
+            </div>
+            <div class="input-group">
+                <label for="enemy_level" data-key="enemy_level">敵人等級:</label>
+                <input type="number" id="enemy_level" value="90">
+            </div>
+            <div class="input-group">
+                <label for="defense_reduction" data-key="defense_reduction">防禦力降低 (%):</label>
+                <input type="number" id="defense_reduction" value="0">
+            </div>
+            <div class="input-group">
+                <label for="enemy_resistance" data-key="enemy_resistance">敵人抗性 (%):</label>
+                <input type="number" id="enemy_resistance" value="10">
+            </div>
+            <div class="input-group">
+                <label for="damage_bonus" data-key="damage_bonus">傷害加成 (%):</label>
+                <input type="number" id="damage_bonus" value="50">
+            </div>
+            <div class="input-group">
+                <label for="crit_rate" data-key="crit_rate">暴擊率 (%):</label>
+                <input type="number" id="crit_rate" value="50">
+            </div>
+            <div class="input-group">
+                <label for="crit_damage" data-key="crit_damage">暴擊傷害 (%):</label>
+                <input type="number" id="crit_damage" value="70">
+            </div>
+            <div class="input-group">
+                <label for="elemental_mastery" data-key="elemental_mastery">元素精通:</label>
+                <input type="number" id="elemental_mastery" value="180">
+            </div>
+            <div class="input-group">
+                <label for="reaction_bonus" data-key="reaction_bonus">增幅反應加成 (%):</label>
+                <input type="number" id="reaction_bonus" value="0">
+            </div>
+            <div class="input-group">
+                <label for="reaction_bonus_transformative" data-key="reaction_bonus_transformative">劇變反應加成 (%):</label>
+                <input type="number" id="reaction_bonus_transformative" value="0">
+            </div>
+            <div class="button">
+                <button onclick="calculateDamage()" data-key="calculate_damage">計算傷害</button>
+            </div>
+        </div>
+        <div class="output-section">
+            <div class="results" id="results">
+                <h2 data-key="please_enter_parameters">請輸入參數並點擊「計算傷害」</h2>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var currentLang = 'zh';
+
+        var translations = {
+            'zh': {
+                'title': '原神傷害計算器',
+                'input_parameters': '輸入參數',
+                'attack_power': '攻擊力:',
+                'skill_multiplier': '技能倍率 (%):',
+                'character_level': '角色等級:',
+                'enemy_level': '敵人等級:',
+                'defense_reduction': '防禦力降低 (%):',
+                'enemy_resistance': '敵人抗性 (%):',
+                'damage_bonus': '傷害加成 (%):',
+                'crit_rate': '暴擊率 (%):',
+                'crit_damage': '暴擊傷害 (%):',
+                'elemental_mastery': '元素精通:',
+                'reaction_bonus': '增幅反應加成 (%):',
+                'reaction_bonus_transformative': '劇變反應加成 (%):',
+                'calculate_damage': '計算傷害',
+                'please_enter_parameters': '請輸入參數並點擊「計算傷害」',
+                'elemental_mastery_bonus': '元素精通加成百分比',
+                'amplifying_reaction': '增幅反應',
+                'transformative_reaction': '劇變反應',
+                'quicken_reaction': '激化反應',
+                'damage_results': '傷害結果',
+                'damage_type': '傷害類型',
+                'non_crit': '不暴擊',
+                'crit': '暴擊',
+                'expected_value': '期望值',
+                'no_reaction_damage': '無反應傷害',
+                '1_5x_amplifying_damage': '1.5倍增幅反應傷害',
+                '2_0x_amplifying_damage': '2倍增幅反應傷害',
+                'pure_aggravate_damage': '(純)超激化傷害',
+                'pure_spread_damage': '(純)蔓激化傷害',
+                'transformative_reaction_damage': '劇變反應傷害（不受暴擊影響）',
+                'reaction_type': '反應類型',
+                'damage': '傷害',
+                'swirl': '擴散',
+                'superconduct': '超導',
+                'electrocharged': '感電',
+                'shattered': '碎冰',
+                'overloaded': '超載',
+                'bloom': '綻放',
+                'burgeon': '烈綻放',
+                'hyperbloom': '超綻放',
+                'burning': '燃燒'
+            },
+            'en': {
+                'title': 'Genshin Impact Damage Calculator',
+                'input_parameters': 'Input Parameters',
+                'attack_power': 'Attack Power:',
+                'skill_multiplier': 'Skill Multiplier (%):',
+                'character_level': 'Character Level:',
+                'enemy_level': 'Enemy Level:',
+                'defense_reduction': 'Defense Reduction (%):',
+                'enemy_resistance': 'Enemy Resistance (%):',
+                'damage_bonus': 'Damage Bonus (%):',
+                'crit_rate': 'Critical Rate (%):',
+                'crit_damage': 'Critical Damage (%):',
+                'elemental_mastery': 'Elemental Mastery:',
+                'reaction_bonus': 'Amplifying Reaction Bonus (%):',
+                'reaction_bonus_transformative': 'Transformative Reaction Bonus (%):',
+                'calculate_damage': 'Calculate Damage',
+                'please_enter_parameters': 'Please enter parameters and click "Calculate Damage"',
+                'elemental_mastery_bonus': 'Elemental Mastery Bonus Percentage',
+                'amplifying_reaction': 'Amplifying Reaction',
+                'transformative_reaction': 'Transformative Reaction',
+                'quicken_reaction': 'Quicken Reaction',
+                'damage_results': 'Damage Results',
+                'damage_type': 'Damage Type',
+                'non_crit': 'Non-Critical',
+                'crit': 'Critical',
+                'expected_value': 'Expected Value',
+                'no_reaction_damage': 'No Reaction Damage',
+                '1_5x_amplifying_damage': '1.5x Amplifying Reaction Damage',
+                '2_0x_amplifying_damage': '2x Amplifying Reaction Damage',
+                'pure_aggravate_damage': '(Pure) Aggravate Damage',
+                'pure_spread_damage': '(Pure) Spread Damage',
+                'transformative_reaction_damage': 'Transformative Reaction Damage (Not Affected by Critical Hits)',
+                'reaction_type': 'Reaction Type',
+                'damage': 'Damage',
+                'swirl': 'Swirl',
+                'superconduct': 'Superconduct',
+                'electrocharged': 'Electro-Charged',
+                'shattered': 'Shatter',
+                'overloaded': 'Overloaded',
+                'bloom': 'Bloom',
+                'burgeon': 'Burgeon',
+                'hyperbloom': 'Hyperbloom',
+                'burning': 'Burning'
+            },
+            'ja': {
+                'title': '原神ダメージ計算機',
+                'input_parameters': '入力パラメータ',
+                'attack_power': '攻撃力:',
+                'skill_multiplier': 'スキル倍率 (%):',
+                'character_level': 'キャラクターレベル:',
+                'enemy_level': '敵のレベル:',
+                'defense_reduction': '防御力低下 (%):',
+                'enemy_resistance': '敵の耐性 (%):',
+                'damage_bonus': 'ダメージボーナス (%):',
+                'crit_rate': '会心率 (%):',
+                'crit_damage': '会心ダメージ (%):',
+                'elemental_mastery': '元素熟知:',
+                'reaction_bonus': '増幅反応ボーナス (%):',
+                'reaction_bonus_transformative': '変化反応ボーナス (%):',
+                'calculate_damage': 'ダメージを計算',
+                'please_enter_parameters': 'パラメータを入力して「ダメージを計算」をクリックしてください',
+                'elemental_mastery_bonus': '元素熟知ボーナス割合',
+                'amplifying_reaction': '増幅反応',
+                'transformative_reaction': '変化反応',
+                'quicken_reaction': '激化反応',
+                'damage_results': 'ダメージ結果',
+                'damage_type': 'ダメージタイプ',
+                'non_crit': '非会心',
+                'crit': '会心',
+                'expected_value': '期待値',
+                'no_reaction_damage': '反応なしダメージ',
+                '1_5x_amplifying_damage': '1.5倍増幅反応ダメージ',
+                '2_0x_amplifying_damage': '2倍増幅反応ダメージ',
+                'pure_aggravate_damage': '（純粋）超激化ダメージ',
+                'pure_spread_damage': '（純粋）草激化ダメージ',
+                'transformative_reaction_damage': '変化反応ダメージ（会心の影響を受けない）',
+                'reaction_type': '反応タイプ',
+                'damage': 'ダメージ',
+                'swirl': '拡散',
+                'superconduct': '超伝導',
+                'electrocharged': '感電',
+                'shattered': '氷砕き',
+                'overloaded': '過負荷',
+                'bloom': '開花',
+                'burgeon': '烈開花',
+                'hyperbloom': '超開花',
+                'burning': '燃焼'
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            // 更新所有带有 data-key 属性的元素
+            var elements = document.querySelectorAll('[data-key]');
+            elements.forEach(function(element) {
+                var key = element.getAttribute('data-key');
+                if (translations[currentLang][key]) {
+                    if (element.tagName.toLowerCase() === 'input') {
+                        element.placeholder = translations[currentLang][key];
+                    } else {
+                        element.textContent = translations[currentLang][key];
+                    }
+                }
+            });
+
+            // 如果已经计算了结果，重新计算以更新文本
+            if (document.getElementById('results').innerHTML.trim() !== '') {
+                calculateDamage();
+            }
+        }
+
+        function calculateDamage() {
+            // 取得輸入值，並進行必要的轉換
+            let attack_power = parseFloat(document.getElementById('attack_power').value);
+            let skill_multiplier = parseFloat(document.getElementById('skill_multiplier').value) / 100;
+            let character_level = parseInt(document.getElementById('character_level').value);
+            let enemy_level = parseInt(document.getElementById('enemy_level').value);
+            let defense_reduction = parseFloat(document.getElementById('defense_reduction').value) / 100;
+            let enemy_resistance = parseFloat(document.getElementById('enemy_resistance').value);
+            let damage_bonus = parseFloat(document.getElementById('damage_bonus').value) / 100;
+            let crit_rate = parseFloat(document.getElementById('crit_rate').value) / 100;
+            let crit_damage = parseFloat(document.getElementById('crit_damage').value) / 100;
+            let elemental_mastery = parseFloat(document.getElementById('elemental_mastery').value);
+            let reaction_bonus = parseFloat(document.getElementById('reaction_bonus').value) / 100;
+            let reaction_bonus_transformative = parseFloat(document.getElementById('reaction_bonus_transformative').value) / 100;
+
+            // 基礎攻擊傷害計算
+            let base_attack_damage = attack_power * skill_multiplier;
+
+            // 防禦力倍率計算，確保防禦降低不小於0
+            let defense_multiplier = (character_level + 100) / (
+                (character_level + 100) + Math.max(enemy_level + 100, 0) * (1 - Math.max(defense_reduction, 0))
+            );
+
+            // 抗性倍率計算
+            let R = enemy_resistance;
+            if (R < 0) {
+                resistance_multiplier = 1 - R / 200;
+            } else if (R <= 75) {
+                resistance_multiplier = 1 - R / 100;
+            } else {
+                resistance_multiplier = 1 / (4 * R / 100 + 1);
+            }
+
+            // 傷害加成倍率
+            let damage_bonus_multiplier = 1 + damage_bonus;
+
+            // 總傷害倍率
+            let damage_multiplier = defense_multiplier * resistance_multiplier * damage_bonus_multiplier;
+
+            // 無反應傷害基礎值計算 (未考慮暴擊)
+            let damage_base = base_attack_damage * damage_multiplier;
+
+            // 元素精通提升計算（增幅反應）
+            let em_bonus_amp = (2.78 * elemental_mastery) / (elemental_mastery + 1400);
+
+            // 增幅反應總倍率計算
+            let reaction_multiplier_1_5 = 1.5 * (1 + em_bonus_amp + reaction_bonus);
+            let reaction_multiplier_2_0 = 2.0 * (1 + em_bonus_amp + reaction_bonus);
+
+            // 1.5倍增幅反應傷害基礎值計算
+            let reaction_1_5_base = damage_base * reaction_multiplier_1_5;
+
+            // 2倍增幅反應傷害基礎值計算
+            let reaction_2_0_base = damage_base * reaction_multiplier_2_0;
+
+            // 元素精通提升計算（劇變反應）
+            let em_bonus_trans = (16 * elemental_mastery) / (elemental_mastery + 2000);
+
+            // 劇變反應基礎倍率（固定值）
+            // before 5.2 version
+            // let transformative_reactions = {
+            //     '擴散': 0.6,
+            //     '超導': 0.5,
+            //     '感電': 1.2,
+            //     '碎冰': 1.5,
+            //     '超載': 2.0,
+            //     '綻放': 2.0,
+            //     '烈綻放': 3.0,
+            //     '超綻放': 3.0,
+            //     '燃燒': 0.25
+            // };
+
+            // from 5.2 version
+            let transformative_reactions = {
+                '擴散': 0.6,
+                '超導': 1.5,
+                '感電': 2.0,
+                '碎冰': 3.0,
+                '超載': 2.75,
+                '綻放': 2.0,
+                '烈綻放': 3.0,
+                '超綻放': 3.0,
+                '燃燒': 0.25
+            };
+
+            // 等級系數
+            let level_multiplier = 0.28805 * character_level * character_level - 12.0275 * character_level + 196.12;
+
+            // 劇變反應傷害計算
+            let transformative_multiplier = resistance_multiplier * (1 + em_bonus_trans + reaction_bonus_transformative);
+
+            let swirl_damage = level_multiplier * transformative_reactions['擴散'] * transformative_multiplier;
+            let superconduct_damage = level_multiplier * transformative_reactions['超導'] * transformative_multiplier;
+            let electrocharged_damage = level_multiplier * transformative_reactions['感電'] * transformative_multiplier;
+            let shattered_damage = level_multiplier * transformative_reactions['碎冰'] * transformative_multiplier;
+            let overloaded_damage = level_multiplier * transformative_reactions['超載'] * transformative_multiplier;
+            let bloom_damage = level_multiplier * transformative_reactions['綻放'] * transformative_multiplier;
+            let burgeon_damage = level_multiplier * transformative_reactions['烈綻放'] * transformative_multiplier;
+            let hyperbloom_damage = level_multiplier * transformative_reactions['超綻放'] * transformative_multiplier;
+            let burning_damage = level_multiplier * transformative_reactions['燃燒'] * transformative_multiplier;
+
+            // 元素精通提升計算（激化反應）
+            let em_bonus_quicken = (5 * elemental_mastery) / (elemental_mastery + 1200);
+
+            // 激化反應類型係數
+            let quicken_reactions = {
+                '蔓激化': 1.25,
+                '超激化': 1.15
+            };
+
+            // 激化反應加成值
+            let aggravate_bonus = level_multiplier * quicken_reactions['超激化'] * (1 + em_bonus_quicken);
+            let spread_bonus = level_multiplier * quicken_reactions['蔓激化'] * (1 + em_bonus_quicken);
+
+            // (純)蔓激化傷害基礎值計算(原神中的激化傷害顯示會連同技能的基礎數值如攻擊力再乘上技能倍率一起顯示在畫面上，但這個計算器主要是想顯示激化增加的部份，所以不考慮攻擊力與技能倍率，下方超激化的計算也同理)
+            let aggravate_damage_base = aggravate_bonus * damage_multiplier;
+
+            // (純)超激化傷害基礎值計算
+            let spread_damage_base = spread_bonus * damage_multiplier;
+
+            // 計算傷害（不暴擊、暴擊、期望值）
+            function computeDamage(base_damage) {
+                let damage_no_crit = base_damage;
+                let damage_crit = base_damage * (1 + crit_damage);
+                let expected_damage = damage_no_crit * (1 - crit_rate) + damage_crit * crit_rate;
+                return {
+                    'non_crit': damage_no_crit.toFixed(2),
+                    'crit': damage_crit.toFixed(2),
+                    'expected_value': expected_damage.toFixed(2)
+                };
+            }
+
+            let no_reaction = computeDamage(damage_base);
+            let reaction_1_5 = computeDamage(reaction_1_5_base);
+            let reaction_2_0 = computeDamage(reaction_2_0_base);
+            let aggravate_damage = computeDamage(aggravate_damage_base);
+            let spread_damage = computeDamage(spread_damage_base);
+
+            // 構建結果輸出
+            let resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            // 元素精通加成百分比
+            let emBonusesTable = `
+                <h2>${translations[currentLang]['elemental_mastery_bonus']}</h2>
+                <table class="em-bonuses">
+                    <tr><th>${translations[currentLang]['amplifying_reaction']}</th><td>${(em_bonus_amp * 100).toFixed(2)}%</td></tr>
+                    <tr><th>${translations[currentLang]['transformative_reaction']}</th><td>${(em_bonus_trans * 100).toFixed(2)}%</td></tr>
+                    <tr><th>${translations[currentLang]['quicken_reaction']}</th><td>${(em_bonus_quicken * 100).toFixed(2)}%</td></tr>
+                </table>
+            `;
+            resultsDiv.innerHTML += emBonusesTable;
+
+            // 傷害結果
+            let damageResults = `
+                <h2>${translations[currentLang]['damage_results']}</h2>
+                <table class="damage-results">
+                    <tr>
+                        <th>${translations[currentLang]['damage_type']}</th>
+                        <th>${translations[currentLang]['non_crit']}</th>
+                        <th>${translations[currentLang]['crit']}</th>
+                        <th>${translations[currentLang]['expected_value']}</th>
+                    </tr>
+                    <tr>
+                        <td>${translations[currentLang]['no_reaction_damage']}</td>
+                        <td>${no_reaction['non_crit']}</td>
+                        <td>${no_reaction['crit']}</td>
+                        <td>${no_reaction['expected_value']}</td>
+                    </tr>
+                    <tr>
+                        <td>${translations[currentLang]['1_5x_amplifying_damage']}</td>
+                        <td>${reaction_1_5['non_crit']}</td>
+                        <td>${reaction_1_5['crit']}</td>
+                        <td>${reaction_1_5['expected_value']}</td>
+                    </tr>
+                    <tr>
+                        <td>${translations[currentLang]['2_0x_amplifying_damage']}</td>
+                        <td>${reaction_2_0['non_crit']}</td>
+                        <td>${reaction_2_0['crit']}</td>
+                        <td>${reaction_2_0['expected_value']}</td>
+                    </tr>
+                    <tr>
+                        <td>${translations[currentLang]['pure_aggravate_damage']}</td>
+                        <td>${aggravate_damage['non_crit']}</td>
+                        <td>${aggravate_damage['crit']}</td>
+                        <td>${aggravate_damage['expected_value']}</td>
+                    </tr>
+                    <tr>
+                        <td>${translations[currentLang]['pure_spread_damage']}</td>
+                        <td>${spread_damage['non_crit']}</td>
+                        <td>${spread_damage['crit']}</td>
+                        <td>${spread_damage['expected_value']}</td>
+                    </tr>
+                </table>
+            `;
+            resultsDiv.innerHTML += damageResults;
+
+            let transformativeResults = `
+                <h2>${translations[currentLang]['transformative_reaction_damage']}</h2>
+                <table class="transformative-results">
+                    <tr><th>${translations[currentLang]['reaction_type']}</th><th>${translations[currentLang]['damage']}</th></tr>
+                    <tr><td>${translations[currentLang]['swirl']}</td><td>${swirl_damage.toFixed(2)}</td></tr>
+                    <tr><td>${translations[currentLang]['superconduct']}</td><td>${superconduct_damage.toFixed(2)}</td></tr>
+                    <tr><td>${translations[currentLang]['electrocharged']}</td><td>${electrocharged_damage.toFixed(2)}</td></tr>
+                    <tr><td>${translations[currentLang]['shattered']}</td><td>${shattered_damage.toFixed(2)}</td></tr>
+                    <tr><td>${translations[currentLang]['overloaded']}</td><td>${overloaded_damage.toFixed(2)}</td></tr>
+                    <tr><td>${translations[currentLang]['bloom']}</td><td>${bloom_damage.toFixed(2)}</td></tr>
+                    <tr><td>${translations[currentLang]['burgeon']}</td><td>${burgeon_damage.toFixed(2)}</td></tr>
+                    <tr><td>${translations[currentLang]['hyperbloom']}</td><td>${hyperbloom_damage.toFixed(2)}</td></tr>
+                    <tr><td>${translations[currentLang]['burning']}</td><td>${burning_damage.toFixed(2)}</td></tr>
+                </table>
+            `;
+            resultsDiv.innerHTML += transformativeResults;
+        }
+    </script>
+</body>
+</html>

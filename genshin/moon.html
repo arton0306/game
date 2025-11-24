@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原神：月綻放傷害計算器 (V8 Final)</title>
+    <style>
+        :root {
+            --bg-body: #101014;
+            --bg-panel: #1b1b22;
+            --border: #33333d;
+            /* 改為白綠色 (Moon White-Green) */
+            --accent: #dbffdb; 
+            --accent-soft: rgba(219, 255, 219, 0.1);
+            --text-main: #f0f0f0;
+            --text-sub: #b0b0b0;
+            --text-highlight: #dbffdb; /* 數字使用白綠色 */
+            --text-formula: #8be9fd;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 30px;
+            /* 字體全面放大 */
+            font-size: 19px; 
+            line-height: 1.4;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 98%; 
+            margin: 0 auto;
+        }
+
+        /* 標題區 */
+        header {
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: baseline;
+        }
+
+        h1 {
+            color: var(--accent);
+            font-size: 32px; /* 標題加大 */
+            margin: 0;
+            border-left: 7px solid var(--accent);
+            padding-left: 15px;
+            text-shadow: 0 0 15px rgba(219, 255, 219, 0.3);
+        }
+
+        .subtitle {
+            color: var(--text-sub);
+            font-size: 18px;
+            margin-left: 20px;
+        }
+
+        /* 儀表板佈局 */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        @media (max-width: 1400px) {
+            .dashboard { grid-template-columns: 1fr; }
+            .right-column { position: static !important; }
+        }
+
+        .left-column, .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .right-column {
+            position: sticky;
+            top: 15px;
+        }
+
+        /* 面板通用樣式 */
+        .panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 25px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        .panel-header {
+            font-weight: bold;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-size: 21px; /* 面板標題加大 */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 輸入區塊排版 */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 15px;
+            align-items: flex-start;
+        }
+        
+        .sub-row {
+            margin-top: 5px;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            border: 1px dashed #444;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            color: var(--text-sub);
+            font-size: 17px; /* 標籤加大 */
+        }
+        
+        .label-main {
+            min-width: 130px;
+            display: inline-block;
+        }
+
+        /* 輸入框樣式 */
+        input[type="number"], input[type="text"] {
+            background: #25252e;
+            border: 1px solid #555;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 100px;
+            text-align: right;
+            font-family: monospace;
+            font-size: 19px; /* 輸入字體加大 */
+            transition: border-color 0.2s;
+        }
+        
+        input[type="number"]:focus {
+            border-color: var(--accent);
+            background: #2f2f3a;
+            outline: none;
+        }
+
+        /* Checkbox 美化 */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .chk-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+            font-size: 17px; /* 選項字體加大 */
+            cursor: pointer;
+            background: #22222a;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            transition: border-color 0.2s;
+        }
+        
+        .chk-option:hover {
+            border-color: #666;
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--accent);
+            transform: scale(1.4);
+            cursor: pointer;
+        }
+
+        .unit {
+            color: var(--text-sub);
+            font-size: 15px;
+        }
+        
+        .muted {
+            font-size: 15px; /* 提示字體加大 */
+            color: #999;
+            display: block;
+            margin-top: 8px;
+            font-family: 'Microsoft JhengHei', sans-serif;
+            line-height: 1.5;
+        }
+
+        /* 結果表格 */
+        .result-highlight {
+            background: var(--accent-soft);
+            border: 1px solid var(--accent);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 19px; /* 表格字體加大 */
+            margin-top: 5px;
+        }
+
+        th, td {
+            text-align: right; 
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--text-sub);
+            font-weight: normal;
+            font-size: 17px;
+        }
+        
+        tr:last-child td { border-bottom: none; }
+
+        .val-hl { color: var(--text-highlight); font-weight: bold; font-size: 1.1em; text-shadow: 0 0 5px rgba(219, 255, 219, 0.3); }
+        .val-sub { color: #aaa; font-size: 0.9em; }
+        
+        .total-row {
+            background-color: rgba(219, 255, 219, 0.15);
+            font-weight: bold;
+            font-size: 21px; /* 總傷字體加大 */
+            border-top: 2px solid var(--accent);
+        }
+
+        /* 算式區塊 */
+        .formula-box {
+            background-color: #15151a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px; /* 算式字體微調 */
+            color: var(--text-sub);
+            border: 1px dashed #555;
+            white-space: pre-wrap;
+            line-height: 1.7;
+            overflow-x: auto;
+        }
+        
+        .note { 
+            color: #888; 
+            font-size: 15px; 
+            margin-top: 15px; 
+            padding-top: 10px;
+            border-top: 1px solid #333;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>原神：月綻放傷害計算器</h1>
+        <span class="subtitle">角色：奈芙爾 (Nefer) / 菈烏瑪 (Rauma)</span>
+    </header>
+
+    <div class="dashboard">
+        <div class="left-column" id="calcForm">
+            
+            <div class="panel">
+                <div class="panel-header">1. 奈芙爾 (Nefer) 配置</div>
+                
+                <div class="row">
+                    <div class="input-group">
+                        <label class="label-main">元素精通</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="EM_N" value="749">
+                            <span class="unit">基礎值</span>
+                        </div>
+                        <span id="EMN_hint" class="muted" style="display:none;"></span>
+                    </div>
+                </div>
+
+                <div class="sub-row">
+                    <div class="checkbox-group">
+                        <label class="chk-option"><input type="checkbox" id="N_Truth" checked> 真語秘匣 (+120精通/+36%暴傷)</label>
+                        <label class="chk-option"><input type="checkbox" id="N_FakeVeilStack" checked> 偽秘之帷三層 (+100精通)</label>
+                        <label class="chk-option"><input type="checkbox" id="N_Wid480"> 流浪樂章 (+480精通)</label>
+                        
+                        <div class="chk-option" style="background:transparent; border:none; padding:0;">
+                            <input type="checkbox" id="N_TeamChk" checked>
+                            <span style="color:var(--text-sub);">隊友BUFF精通:</span>
+                            <input type="number" id="N_TeamBuffEM" value="250" style="width:70px;">
+                        </div>
+                    </div>
+                    <div id="EMN_total_hint" class="muted" style="margin-top:12px; color:#aaa;"></div>
+                </div>
+
+                <hr style="border:0; border-top:1px solid #333; margin: 20px 0;">
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>暴擊率 (%)</label>
+                        <input type="number" id="CR_N" value="52.7">
+                    </div>
+                    <div class="input-group">
+                        <label>暴擊傷害 (%)</label>
+                        <input type="number" id="CD_N" value="285.2">
+                    </div>
+                    <div class="input-group">
+                        <label>第1/2段倍率 (%)</label>
+                        <input type="number" id="M1" value="172.8">
+                    </div>
+                    <div class="input-group">
+                        <label>第3段倍率 (%)</label>
+                        <input type="number" id="M3" value="230.4">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-group">
+                        <label>月綻基礎增傷 (%)</label>
+                        <input type="number" id="Base_N" value="14">
+                    </div>
+                    <div class="input-group">
+                        <label>月綻增傷 (%)</label>
+                        <input type="number" id="MoonUp_N" value="10">
+                    </div>
+                    <div class="input-group">
+                        <label>偽秘之帷增傷 (%)</label>
+                        <input type="number" id="FakeVeil" value="24">
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">2. 菈烏瑪 (Rauma) 配置</div>
+                <div class="row">
+                    <div class="input-group">
+                        <label class="label-main">元素精通</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="EM_L" value="868">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sub-row">
+                    <div class="checkbox-group">
+                        <label class="chk-option"><input type="checkbox" id="L_Harp200" checked> 天光的紡琴 (+200精通)</label>
+                        <div class="chk-option" style="background:transparent; border:none; padding:0;">
+                            <input type="checkbox" id="L_TeamChk">
+                            <span style="color:var(--text-sub);">隊友BUFF精通:</span>
+                            <input type="number" id="L_TeamBuffEM" value="0" style="width:70px;">
+                        </div>
+                    </div>
+                    <div id="EML_total_hint" class="muted" style="margin-top:12px; color:#aaa;"></div>
+                </div>
+
+                <hr style="border:0; border-top:1px solid #333; margin: 20px 0;">
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>蒼色祷歌轉化 (%)</label>
+                        <input type="number" id="SongPct" value="400">
+                    </div>
+                    <div class="input-group">
+                        <label>月綻基礎增傷 (%)</label>
+                        <input type="number" id="Base_L" value="14">
+                    </div>
+                    <div class="input-group">
+                        <label>固定月綻暴率 (%)</label>
+                        <input type="number" id="CR_fixed" value="10">
+                    </div>
+                    <div class="input-group">
+                        <label>固定月綻暴傷 (%)</label>
+                        <input type="number" id="CD_fixed" value="20">
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">3. 其它設定 (Others)</div>
+                <div class="row">
+                    <div class="input-group">
+                        <label>敵人草抗 (%)</label>
+                        <input type="number" id="RES" value="-45">
+                    </div>
+                    <div class="input-group">
+                        <label>其他月綻增傷 (%)</label>
+                        <input type="number" id="MoonUp_other" value="24">
+                    </div>
+                </div>
+
+                <div style="margin-top:25px; font-weight:bold; color:var(--text-main); margin-bottom:15px; font-size:18px;">額外增益 (Extra Buffs)</div>
+                <div class="row" style="background:#25252e; padding:20px; border-radius:10px;">
+                    <div class="input-group">
+                        <label>紡月套(全隊精通)</label>
+                        <input type="number" id="SpinEM" value="120">
+                    </div>
+                    <div class="input-group">
+                        <label>紡月套(月曜增傷%)</label>
+                        <input type="number" id="SpinMoonUp" value="10">
+                    </div>
+                    <div class="input-group">
+                        <label>教官套(全隊精通)</label>
+                        <input type="number" id="InstructorEM" value="120">
+                    </div>
+                    <div class="input-group">
+                        <label>雙草共鳴(全隊精通)</label>
+                        <input type="number" id="DendroResEM" value="80">
+                    </div>
+                    <div class="input-group">
+                        <label>原木刀(加奈芙爾)</label>
+                        <input type="number" id="ForestN" value="0">
+                    </div>
+                    <div class="input-group">
+                        <label>原木刀(加菈烏瑪)</label>
+                        <input type="number" id="ForestL" value="0">
+                    </div>
+                </div>
+                <div class="note">說明：全隊精通會同時加到奈芙爾與菈烏瑪；原木刀欄位分別只加到對應角色。紡月的月曜增傷會併入「月綻增傷（其它）」乘區。</div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            
+            <div class="panel result-highlight">
+                <div class="panel-header" style="border-bottom-color:rgba(0,0,0,0.1); color:var(--accent);">
+                    <span>計算結果 (Results)</span>
+                </div>
+                <div id="resultTableContainer"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header" style="font-size:16px; color:var(--text-sub);">
+                    [第三段暴擊] 算式驗證
+                </div>
+                <pre id="formula" class="formula-box"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- 工具函數 ---
+function pct(x){return parseFloat(x)/100.0;}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+function resMultiplier(r){
+  r = pct(r);
+  if (r >= 0.75) return 1 / (4 * r + 1);
+  else if (r >= 0) return 1 - r;
+  else return 1 - r/2;
+}
+function coreDamage(EMN, M, BaseN, BaseL, MoonUpByEM, MoonUpN, MoonUpOther, FakeVeil){
+  return EMN * (M/100) * (1 + BaseN + BaseL) * (1 + MoonUpByEM + MoonUpN + MoonUpOther) * (1 + FakeVeil);
+}
+
+// --- 主計算函數 ---
+function calc(){
+  const v = id => parseFloat(document.getElementById(id).value)||0;
+  const cb = id => document.getElementById(id).checked;
+  
+  // 奈芙爾
+  let EMN=v('EM_N'), CRN=pct(v('CR_N')), CDN=pct(v('CD_N'));
+  let M1=v('M1'), M3=v('M3');
+  let BaseN=pct(v('Base_N')), MoonUpN=pct(v('MoonUp_N')), FakeVeil=pct(v('FakeVeil'));
+  const N_TruthEM = cb('N_Truth') ? 120 : 0; 
+  const N_FakeVeilEM = cb('N_FakeVeilStack') ? 100 : 0;
+  const N_Wid480 = cb('N_Wid480') ? 480 : 0;
+  const N_TeamBuffVal = cb('N_TeamChk') ? v('N_TeamBuffEM') : 0;
+  
+  // 菈烏瑪
+  let EML=v('EM_L');
+  const L_Harp200 = cb('L_Harp200') ? 200 : 0;
+  const L_TeamBuffVal = cb('L_TeamChk') ? v('L_TeamBuffEM') : 0;
+  let SongPct=pct(v('SongPct'));
+  let BaseL=pct(v('Base_L'));
+  let CRfixed=pct(v('CR_fixed')), CDfixed=pct(v('CD_fixed'));
+  
+  // 其它
+  let RES=v('RES');
+  let MoonUpOther=pct(v('MoonUp_other'));
+  
+  // 額外增益
+  let SpinEM=v('SpinEM'), SpinMoonUp=pct(v('SpinMoonUp'));
+  let InstructorEM=v('InstructorEM');
+  let ForestN=v('ForestN'), ForestL=v('ForestL');
+  let DendroResEM=v('DendroResEM');
+
+  // 彙總
+  const TeamEM = SpinEM + InstructorEM + DendroResEM;
+  const EMN_eff = EMN + N_TruthEM + N_FakeVeilEM + N_Wid480 + N_TeamBuffVal + TeamEM + ForestN;
+  const EML_eff = EML + L_Harp200 + L_TeamBuffVal + TeamEM + ForestL;
+  const MoonUpOther_eff = MoonUpOther + SpinMoonUp;
+
+  const MoonUpByEM = (6*EMN_eff)/(EMN_eff+2000);
+
+  // 顯示 EM 提示與總和 (移動增傷轉化位置)
+  document.getElementById('EMN_total_hint').innerHTML = 
+    `有效精通： ${EMN} + 真語(${N_TruthEM}) + 帷幕(${N_FakeVeilEM}) + 流浪樂章(${N_Wid480}) + 隊友(${N_TeamBuffVal}) + 紡月+教官+雙草(${TeamEM}) + 原木刀(${ForestN}) = <b>${EMN_eff}</b>` +
+    `<span style="color:var(--accent); margin-left:15px; font-weight:bold;">(➜ 增傷轉化：${(MoonUpByEM*100).toFixed(2)}%)</span>`;
+  
+  document.getElementById('EML_total_hint').textContent = 
+    `有效精通： ${EML} + 紡琴(${L_Harp200}) + 隊友(${L_TeamBuffVal}) + 紡月+教官+雙草(${TeamEM}) + 原木刀(${ForestL}) = ${EML_eff}`;
+
+  // 暴擊與抗性
+  const ExtraCDTruth = cb('N_Truth') ? 0.36 : 0;
+  const CRtot=clamp(CRN+CRfixed,0,1), CDtot=CDN+CDfixed+ExtraCDTruth;
+  const Cexp=1+CRtot*CDtot;
+  const R=resMultiplier(RES);
+
+  // 計算單段
+  const calcOne=(M)=>{
+    const core=coreDamage(EMN_eff,M,BaseN,BaseL,MoonUpByEM,MoonUpN,MoonUpOther_eff,FakeVeil);
+    const song=EML_eff*SongPct;
+    const total=core+song;
+    const nonCrit=total*R;
+    const crit=total*(1+CDtot)*R;
+    const exp=total*Cexp*R;
+
+    const L_non=song*R;
+    const L_crit=song*(1+CDtot)*R;
+    const L_exp=song*Cexp*R;
+
+    const share = L_exp/exp;
+    return {core,song,total,nonCrit,crit,exp,L_non,L_crit,L_exp,share};
+  };
+
+  const p1=calcOne(M1), p3=calcOne(M3);
+
+  // 總傷害計算： (第1段 * 2) + 第3段
+  const totalDmg = {
+    nonCrit: p1.nonCrit * 2 + p3.nonCrit,
+    crit: p1.crit * 2 + p3.crit,
+    exp: p1.exp * 2 + p3.exp
+  };
+
+  const fmt=n=>{
+      if(n > 1000000) return (n/10000).toFixed(1) + "萬";
+      return Math.round(n).toLocaleString();
+  };
+  const pctFmt=n=>(n*100).toFixed(1)+'%';
+
+  // 產生表格 HTML
+  let html='<table class="res-table"><thead><tr><th>段數</th><th>非暴擊</th><th>暴擊</th><th>期望</th></tr></thead><tbody>';
+  
+  // Row 1: 1st/2nd Hit (Per hit)
+  html+=`<tr>
+            <td>第1/2段 (每下)</td>
+            <td>${fmt(p1.nonCrit)}</td>
+            <td class="val-hl">${fmt(p1.crit)}</td>
+            <td>${fmt(p1.exp)}</td>
+         </tr>`;
+  
+  // Row 2: 3rd Hit
+  html+=`<tr>
+            <td>第3段</td>
+            <td>${fmt(p3.nonCrit)}</td>
+            <td class="val-hl">${fmt(p3.crit)}</td>
+            <td>${fmt(p3.exp)}</td>
+         </tr>`;
+         
+  // Row 3: Total
+  html+=`<tr class="total-row">
+            <td>總傷害</td>
+            <td>${fmt(totalDmg.nonCrit)}</td>
+            <td class="val-hl">${fmt(totalDmg.crit)}</td>
+            <td>${fmt(totalDmg.exp)}</td>
+         </tr>`;
+         
+  html+=`</tbody></table>`;
+  
+  // 菈烏瑪貢獻與佔比 (改為左右分開的兩個 Rows)
+  html+=`<div style="margin-top:20px; font-size:16px; border-top:1px dashed #666; padding-top:15px;">
+            <div style="margin-bottom:8px; color:#aaa;">菈烏瑪(Rauma) 貢獻值 (期望):</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding-bottom:4px;">
+                    <span>第1/2段</span>
+                    <span><span class="val-hl" style="color:#f0f0f0;">${fmt(p1.L_exp)}</span> <span style="color:#888; margin-left:5px;">(${pctFmt(p1.share)})</span></span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>第3段</span>
+                    <span><span class="val-hl" style="color:#f0f0f0;">${fmt(p3.L_exp)}</span> <span style="color:#888; margin-left:5px;">(${pctFmt(p3.share)})</span></span>
+                </div>
+            </div>
+         </div>`;
+
+  document.getElementById('resultTableContainer').innerHTML=html;
+
+  // 公式展開 (浮點數精度控制)
+  const baseSum = (1 + BaseN + BaseL);
+  const moonUpVal = (1 + MoonUpByEM + MoonUpN + MoonUpOther_eff);
+  const veilVal = (1 + FakeVeil);
+
+  // M3/100 加上 toFixed(3)
+  const coreNums = `(${EMN_eff} * ${(M3/100).toFixed(3)}) * ${baseSum.toFixed(3)} * ${moonUpVal.toFixed(3)} * ${veilVal.toFixed(3)} = ${p3.core.toFixed(0)}`;
+  const songNums = `(${EML_eff} * ${(SongPct)}) = ${p3.song.toFixed(0)}`;
+
+  const f = [
+    '第三段暴擊傷害 = ((綻放基礎 + 蒼色轉化) * (1 + 暴傷)) * 抗性乘區',
+    '------------------------------------------------',
+    `綻放基礎 (Core) = ${coreNums}`,
+    `蒼色轉化 (Song) = ${songNums}`,
+    '------------------------------------------------',
+    `代入：((${p3.core.toFixed(0)} + ${p3.song.toFixed(0)}) * (1 + ${CDtot.toFixed(2)})) * ${R.toFixed(2)}`,
+    `      = (${(p3.core+p3.song).toFixed(0)} * ${(1+CDtot).toFixed(2)}) * ${R.toFixed(2)} = ${p3.crit.toFixed(0)}`
+  ].join('\n');
+
+  document.getElementById('formula').textContent=f;
+}
+
+// 事件綁定
+Array.from(document.querySelectorAll('input')).forEach(el=>{
+  el.addEventListener('input',calc);
+  el.addEventListener('change',calc);
+});
+calc();
+</script>
+
+</body>
+</html>

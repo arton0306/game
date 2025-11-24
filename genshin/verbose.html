@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>原神傷害計算器 - 動態公式示範</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 { text-align: center; }
+        .language-buttons {
+            text-align: center; margin-bottom: 20px;
+        }
+        .language-buttons button {
+            margin: 0 10px; padding: 5px 10px; font-size: 16px;
+        }
+        .container {
+            display: flex; flex-wrap: wrap;
+            max-width: 1200px; margin: auto;
+        }
+        .input-section, .output-section {
+            flex: 1; min-width: 300px;
+            padding: 20px; box-sizing: border-box;
+        }
+        .input-section { border-right: 1px solid #ddd; }
+        .input-group {
+            display: flex; flex-wrap: wrap; margin-bottom: 10px;
+        }
+        .input-group label {
+            flex: 1 0 120px; margin-right: 10px; padding-top: 5px;
+        }
+        .input-group input {
+            flex: 1 0 150px; padding: 5px;
+        }
+        .button { text-align: center; margin-top: 20px; }
+        .button button {
+            padding: 10px 20px; font-size: 16px;
+        }
+        .results { margin-top: 20px; }
+        .results h2 { text-align: center; }
+        .results table {
+            width: 100%; border-collapse: collapse;
+        }
+        .results th, .results td {
+            border: 1px solid #ddd; padding: 8px; text-align: center;
+        }
+        .results th { background-color: #f2f2f2; }
+
+        /* 顯示公式的區域 */
+        .formula-explanation {
+            min-height: 120px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+            padding: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            white-space: pre-wrap; 
+        }
+
+        @media (max-width: 800px) {
+            .container { flex-direction: column; }
+            .input-section, .output-section { min-width: 100%; }
+            .input-group label, .input-group input { flex: 1 0 100%; }
+            .input-group label { margin-bottom: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>原神傷害計算器 (含動態公式)</h1>
+    
+    <div class="container">
+        <div class="input-section">
+            <h2>輸入參數</h2>
+            <div class="input-group">
+                <label for="attack_power">攻擊力:</label>
+                <input type="number" id="attack_power" value="2000">
+            </div>
+            <div class="input-group">
+                <label for="skill_multiplier">技能倍率 (%):</label>
+                <input type="number" id="skill_multiplier" value="200">
+            </div>
+            <div class="input-group">
+                <label for="character_level">角色等級:</label>
+                <input type="number" id="character_level" value="90">
+            </div>
+            <div class="input-group">
+                <label for="enemy_level">敵人等級:</label>
+                <input type="number" id="enemy_level" value="90">
+            </div>
+            <div class="input-group">
+                <label for="defense_reduction">防禦力降低 (%):</label>
+                <input type="number" id="defense_reduction" value="0">
+            </div>
+            <div class="input-group">
+                <label for="enemy_resistance">敵人抗性 (%):</label>
+                <input type="number" id="enemy_resistance" value="10">
+            </div>
+            <div class="input-group">
+                <label for="damage_bonus">傷害加成 (%):</label>
+                <input type="number" id="damage_bonus" value="50">
+            </div>
+            <div class="input-group">
+                <label for="crit_rate">暴擊率 (%):</label>
+                <input type="number" id="crit_rate" value="50">
+            </div>
+            <div class="input-group">
+                <label for="crit_damage">暴擊傷害 (%):</label>
+                <input type="number" id="crit_damage" value="70">
+            </div>
+            <div class="button">
+                <button onclick="calculateDamage()">計算傷害</button>
+            </div>
+        </div>
+        
+        <div class="output-section">
+            <div class="results" id="results">
+                <!-- 計算結果表格會動態顯示在這裡 -->
+            </div>
+            <div id="formulaExplanation" class="formula-explanation">
+                滑鼠移到上方表格某個數值即可查看計算公式
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function calculateDamage() {
+        // 1. 取得輸入值
+        let atk        = parseFloat(document.getElementById('attack_power').value);
+        let skillMult  = parseFloat(document.getElementById('skill_multiplier').value) / 100;
+        let lvChar     = parseInt(document.getElementById('character_level').value);
+        let lvEnemy    = parseInt(document.getElementById('enemy_level').value);
+        let defReduce  = parseFloat(document.getElementById('defense_reduction').value) / 100;
+        let enemyRes   = parseFloat(document.getElementById('enemy_resistance').value);
+        let dmgBonus   = parseFloat(document.getElementById('damage_bonus').value) / 100;
+        let cRate      = parseFloat(document.getElementById('crit_rate').value) / 100;
+        let cDmg       = parseFloat(document.getElementById('crit_damage').value) / 100;
+
+        // 2. 防禦力倍率
+        let defMult = (lvChar + 100) / ((lvChar + 100) + (lvEnemy + 100) * (1 - defReduce));
+
+        // 3. 抗性倍率 (這裡示範保留你原本的寫法, 可自行改成完整負抗加成)
+        let R = enemyRes;
+        let resMult = 0;
+        if (R < 0) {
+            // 若你有自訂負抗計算就放這裡
+            resMult = 1 - R/100/2; 
+        } else if (R <= 75) {
+            resMult = 1 - R/100;
+        } else {
+            resMult = 1 / (1 + (R - 75)/100 * 4);
+        }
+
+        // 4. 傷害加成
+        let dmgMult = 1 + dmgBonus;
+
+        // 5. 基礎傷害(無反應, 未暴擊)
+        //    baseAtkDmg = ATK * 技能倍率
+        //    damageBase = baseAtkDmg * defMult * resMult * dmgMult
+        let baseAtkDmg  = atk * skillMult;
+        let damageBase  = baseAtkDmg * defMult * resMult * dmgMult;
+        
+        // 6. 計算「不暴擊、暴擊、期望」
+        let noCritValue   = damageBase;
+        let critValue     = damageBase * (1 + cDmg);
+        let expectedValue = noCritValue*(1 - cRate) + critValue*cRate;
+
+        // === (A) 先組裝公式字串 ===
+        // 為了讓用戶能「複製貼到 Python」就能算出相同結果，我們要把所有數字都展開。
+        // 1) 無反應-不暴擊
+        let noReactionNoCritFormula = 
+           `# 無反應 - 不暴擊公式 (展開數字)\n` +
+           `(${atk} * (${(skillMult*100).toFixed(2)}/100)) * ${defMult.toFixed(6)} * ${resMult.toFixed(6)} * (1 + ${dmgBonus.toFixed(4)})`;
+        let noReactionNoCritResult = noCritValue.toFixed(2);
+
+        // 2) 無反應-暴擊
+        let noReactionCritFormula =
+           `# 無反應 - 暴擊公式\n` +
+           `(${noReactionNoCritFormula}) * (1 + ${cDmg.toFixed(4)})`;
+        let noReactionCritResult = critValue.toFixed(2);
+
+        // 3) 無反應-期望
+        let noReactionExpectedFormula =
+           `# 無反應 - 期望公式\n` +
+           `(${noReactionNoCritResult} * (1 - ${cRate.toFixed(4)})) + (${noReactionCritResult} * ${cRate.toFixed(4)})`;
+        let noReactionExpectedResult = expectedValue.toFixed(2);
+
+
+        // === (B) 增幅反應範例 (1.5倍, 2倍) ===
+        //    建議你可另外加上元素精通、增幅加成等等，這裡只簡單示範
+        let amplify15Base    = damageBase * 1.5;
+        let amplify15NoCrit  = amplify15Base;
+        let amplify15Crit    = amplify15Base * (1 + cDmg);
+        let amplify15Expect  = amplify15NoCrit*(1 - cRate) + amplify15Crit*cRate;
+
+        // 公式字串
+        let amp15NoCritFormula =
+          `# 1.5倍增幅 - 不暴擊\n` +
+          `(${noReactionNoCritFormula}) * 1.5`;
+        let amp15NoCritResult = amplify15NoCrit.toFixed(2);
+
+        let amp15CritFormula =
+          `# 1.5倍增幅 - 暴擊\n` +
+          `(${amp15NoCritFormula}) * (1 + ${cDmg.toFixed(4)})`;
+        let amp15CritResult = amplify15Crit.toFixed(2);
+
+        let amp15ExpectedFormula =
+          `# 1.5倍增幅 - 期望\n` +
+          `(${amp15NoCritResult} * (1 - ${cRate.toFixed(4)})) + (${amp15CritResult} * ${cRate.toFixed(4)})`;
+        let amp15ExpectedResult = amplify15Expect.toFixed(2);
+
+
+        // 同理, 2倍增幅
+        let amplify20Base    = damageBase * 2.0;
+        let amplify20NoCrit  = amplify20Base;
+        let amplify20Crit    = amplify20Base * (1 + cDmg);
+        let amplify20Expect  = amplify20NoCrit*(1 - cRate) + amplify20Crit*cRate;
+
+        let amp20NoCritFormula =
+          `# 2.0倍增幅 - 不暴擊\n` +
+          `(${noReactionNoCritFormula}) * 2.0`;
+        let amp20NoCritResult = amplify20NoCrit.toFixed(2);
+
+        let amp20CritFormula =
+          `# 2.0倍增幅 - 暴擊\n` +
+          `(${amp20NoCritFormula}) * (1 + ${cDmg.toFixed(4)})`;
+        let amp20CritResult = amplify20Crit.toFixed(2);
+
+        let amp20ExpectedFormula =
+          `# 2.0倍增幅 - 期望\n` +
+          `(${amp20NoCritResult} * (1 - ${cRate.toFixed(4)})) + (${amp20CritResult} * ${cRate.toFixed(4)})`;
+        let amp20ExpectedResult = amplify20Expect.toFixed(2);
+
+        // 7. 產生結果表格 (僅示範無反應+增幅兩段, 你可再加 "激化"、"劇變" 等等)
+        let tableHtml = `
+        <h2>傷害結果</h2>
+        <table>
+          <tr>
+            <th>類型</th>
+            <th>不暴擊</th>
+            <th>暴擊</th>
+            <th>期望</th>
+          </tr>
+          <!-- 無反應 -->
+          <tr>
+            <td>無反應</td>
+            <td data-formula="${noReactionNoCritFormula} = ${noReactionNoCritResult}">${noReactionNoCritResult}</td>
+            <td data-formula="${noReactionCritFormula} = ${noReactionCritResult}">${noReactionCritResult}</td>
+            <td data-formula="${noReactionExpectedFormula} = ${noReactionExpectedResult}">${noReactionExpectedResult}</td>
+          </tr>
+          <!-- 1.5倍增幅 -->
+          <tr>
+            <td>1.5倍增幅</td>
+            <td data-formula="${amp15NoCritFormula} = ${amp15NoCritResult}">${amp15NoCritResult}</td>
+            <td data-formula="${amp15CritFormula} = ${amp15CritResult}">${amp15CritResult}</td>
+            <td data-formula="${amp15ExpectedFormula} = ${amp15ExpectedResult}">${amp15ExpectedResult}</td>
+          </tr>
+          <!-- 2.0倍增幅 -->
+          <tr>
+            <td>2.0倍增幅</td>
+            <td data-formula="${amp20NoCritFormula} = ${amp20NoCritResult}">${amp20NoCritResult}</td>
+            <td data-formula="${amp20CritFormula} = ${amp20CritResult}">${amp20CritResult}</td>
+            <td data-formula="${amp20ExpectedFormula} = ${amp20ExpectedResult}">${amp20ExpectedResult}</td>
+          </tr>
+        </table>
+        `;
+
+        // 8. 顯示到網頁
+        let resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = tableHtml;
+
+        // 9. 綁定事件：滑鼠移入、移出
+        let formulaDiv = document.getElementById('formulaExplanation');
+        let tds = resultsDiv.querySelectorAll('td[data-formula]');
+        tds.forEach(td => {
+            td.addEventListener('mouseover', () => {
+                formulaDiv.textContent = td.getAttribute('data-formula');
+            });
+            td.addEventListener('mouseout', () => {
+                formulaDiv.textContent = '滑鼠移到上方表格某個數值即可查看計算公式';
+            });
+        });
+    }
+    </script>
+</body>
+</html>
+
