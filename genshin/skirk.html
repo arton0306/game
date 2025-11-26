@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>絲柯克隊伍傷害計算機 (V7 Final)</title>
     <style>
         :root {
-            --bg-body: #101014;
-            --bg-panel: #1b1b22;
-            --border: #33333d;
-            --accent: #9d6eff;
-            --accent-hover: #b38bff;
-            --text-main: #f0f0f0;
-            --text-sub: #b0b0b0;
+            --bg-body: #101418;
+            --bg-panel: #161b22;
+            --border: #2d3842;
+            --accent: #7ce3ff;
+            --accent-hover: #a3eeff;
+            --text-main: #f0f8ff;
+            --text-sub: #aabbcd;
             --text-highlight: #ffcc00;
             --text-formula: #8be9fd;
         }
@@ -49,6 +50,7 @@
             margin: 0;
             border-left: 6px solid var(--accent);
             padding-left: 15px;
+            text-shadow: 0 0 10px rgba(124, 227, 255, 0.3);
         }
 
         .subtitle {
@@ -66,11 +68,17 @@
         }
 
         @media (max-width: 1300px) {
-            .dashboard { grid-template-columns: 1fr; }
-            .right-column { position: static !important; }
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .right-column {
+                position: static !important;
+            }
         }
 
-        .left-column, .right-column {
+        .left-column,
+        .right-column {
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -87,7 +95,7 @@
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 15px 22px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
 
         .panel-header {
@@ -129,9 +137,10 @@
         }
 
         /* 輸入框樣式 */
-        input[type="number"], select {
-            background: #25252e;
-            border: 1px solid #555;
+        input[type="number"],
+        select {
+            background: #1e2630;
+            border: 1px solid #4a5a6a;
             color: white;
             padding: 6px 10px;
             border-radius: 6px;
@@ -142,10 +151,12 @@
             transition: border-color 0.2s;
         }
 
-        input[type="number"]:focus, select:focus {
+        input[type="number"]:focus,
+        select:focus {
             border-color: var(--accent);
-            background: #2f2f3a;
+            background: #25303d;
             outline: none;
+            box-shadow: 0 0 5px rgba(124, 227, 255, 0.2);
         }
 
         /* 選項群組 */
@@ -155,7 +166,8 @@
             gap: 6px;
         }
 
-        .checkbox-line, .radio-line {
+        .checkbox-line,
+        .radio-line {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -164,7 +176,8 @@
             padding: 2px 0;
         }
 
-        input[type="checkbox"], input[type="radio"] {
+        input[type="checkbox"],
+        input[type="radio"] {
             accent-color: var(--accent);
             transform: scale(1.3);
             cursor: pointer;
@@ -183,8 +196,10 @@
             margin-top: 5px;
         }
 
-        th, td {
-            text-align: right; /* 全體靠右 */
+        th,
+        td {
+            text-align: right;
+            /* 全體靠右 */
             padding: 10px 8px;
             border-bottom: 1px solid var(--border);
         }
@@ -195,14 +210,28 @@
             font-size: 15px;
         }
 
-        tr:last-child td { border-bottom: none; }
+        tr:last-child td {
+            border-bottom: none;
+        }
 
-        .res-crit { color: var(--text-highlight); font-weight: bold; font-size: 1.1em; }
-        .res-avg { color: #ddd; }
-        .total-row { background-color: rgba(157, 110, 255, 0.2); font-weight: bold; font-size: 19px; }
+        .res-crit {
+            color: var(--text-highlight);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .res-avg {
+            color: #ddd;
+        }
+
+        .total-row {
+            background-color: rgba(124, 227, 255, 0.15);
+            font-weight: bold;
+            font-size: 19px;
+        }
 
         .result-highlight {
-            background: rgba(157, 110, 255, 0.05);
+            background: rgba(124, 227, 255, 0.03);
             border: 1px solid var(--accent);
         }
 
@@ -218,425 +247,449 @@
             border: 1px dashed #555;
             line-height: 1.6;
         }
-        .formula-val { color: var(--text-formula); }
 
-        .note-small { font-size: 13px; color: #777; }
+        .formula-val {
+            color: var(--text-formula);
+        }
 
+        .note-small {
+            font-size: 13px;
+            color: #777;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <header>
-        <h1>絲柯克 (Skirk) 傷害計算機</h1>
-        <span class="subtitle">隊伍：絲柯克 / 愛可菲 / 芙寧娜 / 莫娜</span>
-    </header>
+    <div class="container">
+        <header>
+            <h1>絲柯克 (Skirk) 傷害計算機</h1>
+            <span class="subtitle">隊伍：絲柯克 / 愛可菲 / 芙寧娜 / 莫娜</span>
+        </header>
 
-    <div class="dashboard">
+        <div class="dashboard">
 
-        <div class="left-column">
+            <div class="left-column">
 
-            <div class="panel">
-                <div class="panel-header">1. 面板數值 (Stats)</div>
-                <div class="row">
-                    <div class="input-group">
-                        <label>基礎攻擊 (白值)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="baseAtk" value="924" oninput="calc()">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>聖遺物攻擊 (綠值)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="flatAtk" value="1523" oninput="calc()">
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label>暴擊率 (%)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="critRate" value="71.9" oninput="calc()">
-                        </div>
-                        <div style="margin-top: 5px;">
-                            <label class="checkbox-line" style="font-size: 14px; color: #bbb;">
-                                <input type="checkbox" id="resCryo" checked onchange="calc()">
-                                雙冰共鳴 (+15%)
-                            </label>
-                            <div style="font-size: 13px; color: #777; margin-left: 26px; margin-top: 2px;">
-                                最終暴率: <span id="displayFinalCritRate">0%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label>暴擊傷害 (%)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="critDmg" value="172.3" oninput="calc()">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>傷害加成 (%)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="baseDmgBonus" value="171" oninput="calc()">
-                            <span class="unit">聖遺物+武器</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-header">2. 技能倍率 (Talents)</div>
-                <div class="row" style="background:#25252e; padding:12px; border-radius:8px;">
-                    <div class="input-group">
-                        <label>蛇之狡謀層數</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="stackCount" value="12" oninput="calc()">
-                            <span class="unit" style="color:#999;">(係數 34.78%)</span>
-                        </div>
-                    </div>
-                    <div class="input-group" style="margin-left: 25px;">
-                        <label>天賦：萬流歸寂</label>
-                        <div class="input-wrapper">
-                            <select id="talentIndependent" onchange="calc()" style="width:130px;">
-                                <option value="1.0">無 (100%)</option>
-                                <option value="1.05">105%</option>
-                                <option value="1.15">115%</option>
-                                <option value="1.60" selected>160%</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="row" style="margin-top:10px;">
-                    <div class="input-group">
-                        <label>前5段 (單次 %)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="hits1to5Base" value="221" oninput="calc()">
-                            <span class="unit">➜ <span id="displayHit1to5" style="color:var(--accent); font-weight:bold;">0%</span></span>
-                        </div>
-                    </div>
-                    <div class="input-group" style="margin-left: 15px;">
-                        <label>最終段 (爆發 %)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="finalHitBase" value="368.3" oninput="calc()">
-                            <span class="unit">➜ <span id="displayFinalHit" style="color:var(--accent); font-weight:bold;">0%</span></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-header">3. 隊友增益 (Buffs)</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div>
-                        <div style="color: var(--accent); font-weight:bold; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-size:17px;">[ 愛可菲 ]</div>
-                        <div style="font-size:14px; color:#aaa; margin-bottom:8px;">聖遺物 (4選1):</div>
-                        <div class="option-group">
-                            <label class="radio-line"><input type="radio" name="escoSet" value="troupe" checked onchange="calc()"> 劇團套 (無效果)</label>
-                            <label class="radio-line"><input type="radio" name="escoSet" value="tenacity" onchange="calc()"> 千岩套 (+20%攻)</label>
-                            <label class="radio-line"><input type="radio" name="escoSet" value="noblesse" onchange="calc()"> 宗室套 (+20%攻)</label>
-                            <label class="radio-line"><input type="radio" name="escoSet" value="cinder" onchange="calc()"> 燼城套 (+12%傷)</label>
-                        </div>
-                        <div style="margin-top: 15px; border-top:1px dashed #444; padding-top:10px;">
-                            <label class="checkbox-line">
-                                <input type="checkbox" id="buffEscoffierC1" onchange="calc()">
-                                <span>1命: 靈感浸入 <span style="color:#ffcc00; font-weight:bold;">(+60%爆傷)</span></span>
-                            </label>
-                        </div>
-                    </div>
-                    <div>
-                        <div style="color: #6e9dff; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-size:17px;">[ 芙寧娜 ]</div>
-                        <div class="row" style="margin-bottom:10px;">
+                <div class="panel">
+                    <div class="panel-header">1. 面板數值 (Stats)</div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label>基礎攻擊 (白值)</label>
                             <div class="input-wrapper">
-                                <label class="checkbox-line">
-                                    <input type="checkbox" id="buffFurinaOn" checked onchange="calc()">
-                                    氣氛增傷
-                                </label>
-                                <input type="number" id="buffFurinaVal" value="100" oninput="calc()" style="width:75px;"> %
+                                <input type="number" id="baseAtk" value="924" oninput="calc()">
                             </div>
                         </div>
-
-                        <div style="margin-bottom:20px;">
-                             <label class="checkbox-line">
-                                <input type="checkbox" id="buffFurinaTenacity" checked onchange="calc()">
-                                千岩套 (+20%攻) <span class="note-small">(不疊加)</span>
-                            </label>
-                        </div>
-
-                        <div style="color: #6e7aff; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-size:17px;">[ 莫娜 ]</div>
-                        <div class="option-group">
+                        <div class="input-group">
+                            <label>聖遺物攻擊 (綠值)</label>
                             <div class="input-wrapper">
-                                <label class="checkbox-line">
-                                    <input type="checkbox" id="buffMonaOn" checked onchange="calc()">
-                                    星異增傷
-                                </label>
-                                <input type="number" id="buffMonaVal" value="60" oninput="calc()" style="width:75px;"> %
+                                <input type="number" id="flatAtk" value="1523" oninput="calc()">
                             </div>
-                            <label class="checkbox-line">
-                                <input type="checkbox" id="buffMonaNoblesse" checked onchange="calc()">
-                                宗室套 (+20%攻) <span class="note-small">(不疊加)</span>
-                            </label>
-                            <label class="checkbox-line">
-                                <input type="checkbox" id="buffTTDS" checked onchange="calc()">
-                                討龍書 (+48%攻)
-                            </label>
+                        </div>
+
+                        <div class="input-group">
+                            <label>暴擊率 (%)</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="critRate" value="71.9" oninput="calc()">
+                            </div>
+                            <div style="margin-top: 5px;">
+                                <label class="checkbox-line" style="font-size: 14px; color: #bbb;">
+                                    <input type="checkbox" id="resCryo" checked onchange="calc()">
+                                    雙冰共鳴 (+15%)
+                                </label>
+                                <div style="font-size: 13px; color: #777; margin-left: 26px; margin-top: 2px;">
+                                    最終暴率: <span id="displayFinalCritRate">0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>暴擊傷害 (%)</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="critDmg" value="172.3" oninput="calc()">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>傷害加成 (%)</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="baseDmgBonus" value="171" oninput="calc()">
+                                <span class="unit">聖遺物+武器</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">2. 技能倍率 (Talents)</div>
+                    <div class="row" style="background:#1e2630; padding:12px; border-radius:8px;">
+                        <div class="input-group">
+                            <label>蛇之狡謀層數</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="stackCount" value="12" oninput="calc()">
+                                <span class="unit" style="color:#999;">(係數 34.78%)</span>
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-left: 25px;">
+                            <label>天賦：萬流歸寂</label>
+                            <div class="input-wrapper">
+                                <select id="talentIndependent" onchange="calc()" style="width:130px;">
+                                    <option value="1.0">無 (100%)</option>
+                                    <option value="1.05">105%</option>
+                                    <option value="1.15">115%</option>
+                                    <option value="1.60" selected>160%</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:10px;">
+                        <div class="input-group">
+                            <label>前5段 (單次 %)</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="hits1to5Base" value="221" oninput="calc()">
+                                <span class="unit">➜ <span id="displayHit1to5"
+                                        style="color:var(--accent); font-weight:bold;">0%</span></span>
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-left: 15px;">
+                            <label>最終段 (爆發 %)</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="finalHitBase" value="368.3" oninput="calc()">
+                                <span class="unit">➜ <span id="displayFinalHit"
+                                        style="color:var(--accent); font-weight:bold;">0%</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">3. 隊友增益 (Buffs)</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                        <div>
+                            <div
+                                style="color: var(--accent); font-weight:bold; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-size:17px;">
+                                [ 愛可菲 ]</div>
+                            <div style="font-size:14px; color:#aaa; margin-bottom:8px;">聖遺物 (4選1):</div>
+                            <div class="option-group">
+                                <label class="radio-line"><input type="radio" name="escoSet" value="troupe" checked
+                                        onchange="calc()"> 劇團套 (無效果)</label>
+                                <label class="radio-line"><input type="radio" name="escoSet" value="tenacity"
+                                        onchange="calc()"> 千岩套 (+20%攻)</label>
+                                <label class="radio-line"><input type="radio" name="escoSet" value="noblesse"
+                                        onchange="calc()"> 宗室套 (+20%攻)</label>
+                                <label class="radio-line"><input type="radio" name="escoSet" value="cinder"
+                                        onchange="calc()"> 燼城套 (+12%傷)</label>
+                            </div>
+                            <div style="margin-top: 15px; border-top:1px dashed #444; padding-top:10px;">
+                                <label class="checkbox-line">
+                                    <input type="checkbox" id="buffEscoffierC1" onchange="calc()">
+                                    <span>1命: 靈感浸入 <span style="color:#ffcc00; font-weight:bold;">(+60%爆傷)</span></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <div
+                                style="color: #6e9dff; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-size:17px;">
+                                [ 芙寧娜 ]</div>
+                            <div class="row" style="margin-bottom:10px;">
+                                <div class="input-wrapper">
+                                    <label class="checkbox-line">
+                                        <input type="checkbox" id="buffFurinaOn" checked onchange="calc()">
+                                        氣氛增傷
+                                    </label>
+                                    <input type="number" id="buffFurinaVal" value="100" oninput="calc()"
+                                        style="width:75px;"> %
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom:20px;">
+                                <label class="checkbox-line">
+                                    <input type="checkbox" id="buffFurinaTenacity" checked onchange="calc()">
+                                    千岩套 (+20%攻) <span class="note-small">(不疊加)</span>
+                                </label>
+                            </div>
+
+                            <div
+                                style="color: #6e7aff; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px; font-size:17px;">
+                                [ 莫娜 ]</div>
+                            <div class="option-group">
+                                <div class="input-wrapper">
+                                    <label class="checkbox-line">
+                                        <input type="checkbox" id="buffMonaOn" checked onchange="calc()">
+                                        星異增傷
+                                    </label>
+                                    <input type="number" id="buffMonaVal" value="60" oninput="calc()"
+                                        style="width:75px;"> %
+                                </div>
+                                <label class="checkbox-line">
+                                    <input type="checkbox" id="buffMonaNoblesse" checked onchange="calc()">
+                                    宗室套 (+20%攻) <span class="note-small">(不疊加)</span>
+                                </label>
+                                <label class="checkbox-line">
+                                    <input type="checkbox" id="buffTTDS" checked onchange="calc()">
+                                    討龍書 (+48%攻)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">4. 敵人與環境 (Enemy & Env)</div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label>角色等級</label>
+                            <input type="number" id="charLv" value="90" oninput="calc()">
+                        </div>
+                        <div class="input-group">
+                            <label>怪物等級</label>
+                            <input type="number" id="enemyLv" value="105" oninput="calc()">
+                        </div>
+                        <div class="input-group">
+                            <label>最終抗性 (%)</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="enemyRes" value="-45" placeholder="-30" oninput="calc()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="border-top:1px dashed #333; margin-top:15px; padding-top:15px;">
+                        <div class="input-group">
+                            <label>環境攻擊加成 (%)</label>
+                            <input type="number" id="envAtk" value="20" oninput="calc()">
+                        </div>
+                        <div class="input-group">
+                            <label>環境傷害加成 (%)</label>
+                            <input type="number" id="envDmg" value="0" oninput="calc()">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="panel">
-                <div class="panel-header">4. 敵人與環境 (Enemy & Env)</div>
-                <div class="row">
-                    <div class="input-group">
-                        <label>角色等級</label>
-                        <input type="number" id="charLv" value="90" oninput="calc()">
+            <div class="right-column">
+
+                <div class="panel result-highlight">
+                    <div class="panel-header" style="color:var(--accent); border-color:var(--accent);">
+                        <span>計算結果 (Results)</span>
                     </div>
-                    <div class="input-group">
-                        <label>怪物等級</label>
-                        <input type="number" id="enemyLv" value="105" oninput="calc()">
+
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:#1a2028; padding:12px; border-radius:6px;">
+                        <span style="font-size:16px; color:var(--text-sub);">最終攻擊力 (含Buff)</span>
+                        <div style="text-align:right;">
+                            <div id="displayFinalAtk" style="font-size:26px; font-weight:bold; color:white;">0</div>
+                            <div id="displayAtkBreakdown" style="font-size:13px; color:#888;">(924+...)</div>
+                        </div>
                     </div>
-                    <div class="input-group">
-                        <label>最終抗性 (%)</label>
-                        <div class="input-wrapper">
-                            <input type="number" id="enemyRes" value="-45" placeholder="-30" oninput="calc()">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:25%">類型</th>
+                                <th style="width:25%">未暴擊</th>
+                                <th style="width:25%">暴擊</th>
+                                <th style="width:25%">期望值</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>前5段(每下)</td>
+                                <td id="r1_non">0</td>
+                                <td id="r1_crit" class="res-crit" style="font-size:1em;">0</td>
+                                <td id="r1_avg" class="res-avg">0</td>
+                            </tr>
+                            <tr>
+                                <td>前5段(合計)</td>
+                                <td id="r2_non">0</td>
+                                <td id="r2_crit" class="res-crit" style="font-size:1em;">0</td>
+                                <td id="r2_avg" class="res-avg">0</td>
+                            </tr>
+                            <tr>
+                                <td>最終段(爆發)</td>
+                                <td id="r3_non">0</td>
+                                <td id="r3_crit" class="res-crit">0</td>
+                                <td id="r3_avg" class="res-avg">0</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td>總傷害</td>
+                                <td id="rTotal_non">0</td>
+                                <td id="rTotal_crit" class="res-crit">0</td>
+                                <td id="rTotal_avg" style="color:white;">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="panel" style="padding: 15px 20px;">
+                    <div style="font-size:15px; font-weight:bold; color:var(--text-sub); margin-bottom:5px;">[最終段暴擊]
+                        算式驗證:</div>
+                    <div class="formula-box">
+                        <div>基礎 = <span class="formula-val" id="f_atk">0</span> × <span class="formula-val"
+                                id="f_motion">0%</span></div>
+                        <div style="margin-top:8px;">
+                            最終 = 基礎
+                            × <span class="formula-val" id="f_dmg">0</span> (增傷)
+                            × <span class="formula-val" id="f_crit">0</span> (暴擊)
+                            × <span class="formula-val" id="f_def">0</span> (防禦)
+                            × <span class="formula-val" id="f_res">0</span> (抗性)
+                            × <span class="formula-val" id="f_indep">0</span> (萬流)
                         </div>
                     </div>
                 </div>
-                <div class="row" style="border-top:1px dashed #333; margin-top:15px; padding-top:15px;">
-                     <div class="input-group">
-                        <label>環境攻擊加成 (%)</label>
-                        <input type="number" id="envAtk" value="20" oninput="calc()">
-                    </div>
-                     <div class="input-group">
-                        <label>環境傷害加成 (%)</label>
-                        <input type="number" id="envDmg" value="0" oninput="calc()">
-                    </div>
-                </div>
+
             </div>
-        </div>
-
-        <div class="right-column">
-
-            <div class="panel result-highlight">
-                <div class="panel-header" style="color:var(--accent); border-color:var(--accent);">
-                    <span>計算結果 (Results)</span>
-                </div>
-
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:#202028; padding:12px; border-radius:6px;">
-                    <span style="font-size:16px; color:var(--text-sub);">最終攻擊力 (含Buff)</span>
-                    <div style="text-align:right;">
-                        <div id="displayFinalAtk" style="font-size:26px; font-weight:bold; color:white;">0</div>
-                        <div id="displayAtkBreakdown" style="font-size:13px; color:#888;">(924+...)</div>
-                    </div>
-                </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:25%">類型</th>
-                            <th style="width:25%">未暴擊</th>
-                            <th style="width:25%">暴擊</th>
-                            <th style="width:25%">期望值</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>前5段(每下)</td>
-                            <td id="r1_non">0</td>
-                            <td id="r1_crit" class="res-crit" style="font-size:1em;">0</td>
-                            <td id="r1_avg" class="res-avg">0</td>
-                        </tr>
-                        <tr>
-                            <td>前5段(合計)</td>
-                            <td id="r2_non">0</td>
-                            <td id="r2_crit" class="res-crit" style="font-size:1em;">0</td>
-                            <td id="r2_avg" class="res-avg">0</td>
-                        </tr>
-                        <tr>
-                            <td>最終段(爆發)</td>
-                            <td id="r3_non">0</td>
-                            <td id="r3_crit" class="res-crit">0</td>
-                            <td id="r3_avg" class="res-avg">0</td>
-                        </tr>
-                        <tr class="total-row">
-                            <td>總傷害</td>
-                            <td id="rTotal_non">0</td>
-                            <td id="rTotal_crit" class="res-crit">0</td>
-                            <td id="rTotal_avg" style="color:white;">0</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="panel" style="padding: 15px 20px;">
-                <div style="font-size:15px; font-weight:bold; color:var(--text-sub); margin-bottom:5px;">[最終段暴擊] 算式驗證:</div>
-                <div class="formula-box">
-                    <div>基礎 = <span class="formula-val" id="f_atk">0</span> × <span class="formula-val" id="f_motion">0%</span></div>
-                    <div style="margin-top:8px;">
-                        最終 = 基礎
-                        × <span class="formula-val" id="f_dmg">0</span> (增傷)
-                        × <span class="formula-val" id="f_crit">0</span> (暴擊)
-                        × <span class="formula-val" id="f_def">0</span> (防禦)
-                        × <span class="formula-val" id="f_res">0</span> (抗性)
-                        × <span class="formula-val" id="f_indep">0</span> (萬流)
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
-</div>
 
-<script>
-    const STACK_SCALING = 34.78;
+    <script>
+        const STACK_SCALING = 34.78;
 
-    function calc() {
-        // --- 1. 讀取 ---
-        let baseAtk = parseFloat(document.getElementById('baseAtk').value) || 0;
-        let flatAtk_green = parseFloat(document.getElementById('flatAtk').value) || 0;
+        function calc() {
+            // --- 1. 讀取 ---
+            let baseAtk = parseFloat(document.getElementById('baseAtk').value) || 0;
+            let flatAtk_green = parseFloat(document.getElementById('flatAtk').value) || 0;
 
-        // 讀取暴擊率
-        let inputCritRate = parseFloat(document.getElementById('critRate').value) || 0;
-        // 處理雙冰共鳴
-        let isResCryo = document.getElementById('resCryo').checked;
-        let finalCritRate = inputCritRate + (isResCryo ? 15 : 0);
-        // 更新顯示文字
-        document.getElementById('displayFinalCritRate').innerText =
-            `${inputCritRate} + ${isResCryo?15:0} = ${finalCritRate.toFixed(1)}%`;
+            // 讀取暴擊率
+            let inputCritRate = parseFloat(document.getElementById('critRate').value) || 0;
+            // 處理雙冰共鳴
+            let isResCryo = document.getElementById('resCryo').checked;
+            let finalCritRate = inputCritRate + (isResCryo ? 15 : 0);
+            // 更新顯示文字
+            document.getElementById('displayFinalCritRate').innerText =
+                `${inputCritRate} + ${isResCryo ? 15 : 0} = ${finalCritRate.toFixed(1)}%`;
 
-        let critDmg = parseFloat(document.getElementById('critDmg').value) || 0;
-        let baseDmgBonus = parseFloat(document.getElementById('baseDmgBonus').value) || 0;
+            let critDmg = parseFloat(document.getElementById('critDmg').value) || 0;
+            let baseDmgBonus = parseFloat(document.getElementById('baseDmgBonus').value) || 0;
 
-        let stackCount = parseFloat(document.getElementById('stackCount').value) || 0;
-        let hits1to5Base = parseFloat(document.getElementById('hits1to5Base').value) || 0;
-        let finalHitBase = parseFloat(document.getElementById('finalHitBase').value) || 0;
-        let indepMult = parseFloat(document.getElementById('talentIndependent').value) || 1.0;
+            let stackCount = parseFloat(document.getElementById('stackCount').value) || 0;
+            let hits1to5Base = parseFloat(document.getElementById('hits1to5Base').value) || 0;
+            let finalHitBase = parseFloat(document.getElementById('finalHitBase').value) || 0;
+            let indepMult = parseFloat(document.getElementById('talentIndependent').value) || 1.0;
 
-        // --- 2. Buff 計算 ---
-        let atkPctBonus = 0;
+            // --- 2. Buff 計算 ---
+            let atkPctBonus = 0;
 
-        // 千岩套邏輯 (愛可菲 或 芙寧娜 有穿都算)
-        let escoSet = document.querySelector('input[name="escoSet"]:checked').value;
-        let isEscoTenacity = (escoSet === 'tenacity');
-        let isFurinaTenacity = document.getElementById('buffFurinaTenacity').checked;
+            // 千岩套邏輯 (愛可菲 或 芙寧娜 有穿都算)
+            let escoSet = document.querySelector('input[name="escoSet"]:checked').value;
+            let isEscoTenacity = (escoSet === 'tenacity');
+            let isFurinaTenacity = document.getElementById('buffFurinaTenacity').checked;
 
-        if (isEscoTenacity || isFurinaTenacity) {
-            atkPctBonus += 20; // 遵循不疊加
+            if (isEscoTenacity || isFurinaTenacity) {
+                atkPctBonus += 20; // 遵循不疊加
+            }
+
+            // 宗室套邏輯 (愛可菲 或 莫娜 有穿都算)
+            let isEscoNoblesse = (escoSet === 'noblesse');
+            let isMonaNoblesse = document.getElementById('buffMonaNoblesse').checked;
+
+            if (isEscoNoblesse || isMonaNoblesse) {
+                atkPctBonus += 20; // 遵循不疊加
+            }
+
+            if (document.getElementById('buffTTDS').checked) atkPctBonus += 48;
+
+            // 加上環境攻擊加成
+            let envAtk = parseFloat(document.getElementById('envAtk').value) || 0;
+            atkPctBonus += envAtk;
+
+            // 增傷計算
+            let totalDmgBonus = baseDmgBonus;
+            // 燼城套修改為 12%
+            if (escoSet === 'cinder') totalDmgBonus += 12;
+
+            if (document.getElementById('buffFurinaOn').checked) {
+                totalDmgBonus += parseFloat(document.getElementById('buffFurinaVal').value) || 0;
+            }
+            if (document.getElementById('buffMonaOn').checked) {
+                totalDmgBonus += parseFloat(document.getElementById('buffMonaVal').value) || 0;
+            }
+
+            // 加上環境傷害加成
+            let envDmg = parseFloat(document.getElementById('envDmg').value) || 0;
+            totalDmgBonus += envDmg;
+
+            // 爆傷
+            let totalCritDmg = critDmg;
+            if (document.getElementById('buffEscoffierC1').checked) totalCritDmg += 60;
+
+            // 敵人
+            let charLv = parseFloat(document.getElementById('charLv').value) || 90;
+            let enemyLv = parseFloat(document.getElementById('enemyLv').value) || 90;
+            let enemyRes = parseFloat(document.getElementById('enemyRes').value) || 10;
+
+            // --- 3. 核心運算 ---
+            let finalAtk = baseAtk * (1 + atkPctBonus / 100) + flatAtk_green;
+
+            let addedPct = stackCount * STACK_SCALING;
+            let realHit1to5Pct = hits1to5Base + addedPct;
+            let realFinalHitPct = finalHitBase + addedPct;
+
+            let dmgMult = 1 + (totalDmgBonus / 100);
+            let defMult = (charLv + 100) / ((charLv + 100) + (enemyLv + 100));
+
+            let resMult = 0;
+            let r = enemyRes / 100;
+            if (r < 0) resMult = 1 - (r / 2);
+            else if (r <= 0.75) resMult = 1 - r;
+            else resMult = 1 / (1 + 4 * r);
+
+            let critMult = 1 + (totalCritDmg / 100);
+            let effCritRate = Math.min(Math.max(finalCritRate, 0), 100) / 100;
+
+            // --- 4. 顯示更新 ---
+            document.getElementById('displayFinalAtk').innerText = Math.round(finalAtk);
+            let totalExtra = finalAtk - baseAtk;
+            document.getElementById('displayAtkBreakdown').innerText = `( ${baseAtk} + ${Math.round(totalExtra)} )`;
+
+            document.getElementById('displayHit1to5').innerText = realHit1to5Pct.toFixed(1) + "%";
+            document.getElementById('displayFinalHit').innerText = realFinalHitPct.toFixed(1) + "%";
+
+            document.getElementById('f_atk').innerText = Math.round(finalAtk);
+            document.getElementById('f_motion').innerText = (realFinalHitPct / 100).toFixed(2);
+            document.getElementById('f_dmg').innerText = dmgMult.toFixed(2);
+            document.getElementById('f_crit').innerText = critMult.toFixed(2);
+            document.getElementById('f_def').innerText = defMult.toFixed(2);
+            document.getElementById('f_res').innerText = resMult.toFixed(2);
+            document.getElementById('f_indep').innerText = indepMult.toFixed(2);
+
+            // --- 5. 傷害輸出 ---
+            function getDmg(motionValuePct) {
+                let base = finalAtk * (motionValuePct / 100);
+                let nonCrit = base * dmgMult * defMult * resMult * indepMult;
+                let crit = nonCrit * critMult;
+                let avg = nonCrit * (1 - effCritRate) + crit * effCritRate;
+                return { non: nonCrit, crit: crit, avg: avg };
+            }
+
+            let d1 = getDmg(realHit1to5Pct);
+            let d3 = getDmg(realFinalHitPct);
+
+            let d2 = { non: d1.non * 5, crit: d1.crit * 5, avg: d1.avg * 5 };
+            let dTotal = { non: d2.non + d3.non, crit: d2.crit + d3.crit, avg: d2.avg + d3.avg };
+
+            function fmt(num) {
+                if (num > 1000000) return (num / 10000).toFixed(1) + "萬";
+                return Math.round(num).toLocaleString();
+            }
+
+            document.getElementById('r1_non').innerText = fmt(d1.non);
+            document.getElementById('r1_crit').innerText = fmt(d1.crit);
+            document.getElementById('r1_avg').innerText = fmt(d1.avg);
+
+            document.getElementById('r2_non').innerText = fmt(d2.non);
+            document.getElementById('r2_crit').innerText = fmt(d2.crit);
+            document.getElementById('r2_avg').innerText = fmt(d2.avg);
+
+            document.getElementById('r3_non').innerText = fmt(d3.non);
+            document.getElementById('r3_crit').innerText = fmt(d3.crit);
+            document.getElementById('r3_avg').innerText = fmt(d3.avg);
+
+            document.getElementById('rTotal_non').innerText = fmt(dTotal.non);
+            document.getElementById('rTotal_crit').innerText = fmt(dTotal.crit);
+            document.getElementById('rTotal_avg').innerText = fmt(dTotal.avg);
         }
 
-        // 宗室套邏輯 (愛可菲 或 莫娜 有穿都算)
-        let isEscoNoblesse = (escoSet === 'noblesse');
-        let isMonaNoblesse = document.getElementById('buffMonaNoblesse').checked;
-
-        if (isEscoNoblesse || isMonaNoblesse) {
-            atkPctBonus += 20; // 遵循不疊加
-        }
-
-        if (document.getElementById('buffTTDS').checked) atkPctBonus += 48;
-
-        // 加上環境攻擊加成
-        let envAtk = parseFloat(document.getElementById('envAtk').value) || 0;
-        atkPctBonus += envAtk;
-
-        // 增傷計算
-        let totalDmgBonus = baseDmgBonus;
-        // 燼城套修改為 12%
-        if (escoSet === 'cinder') totalDmgBonus += 12;
-
-        if (document.getElementById('buffFurinaOn').checked) {
-            totalDmgBonus += parseFloat(document.getElementById('buffFurinaVal').value) || 0;
-        }
-        if (document.getElementById('buffMonaOn').checked) {
-            totalDmgBonus += parseFloat(document.getElementById('buffMonaVal').value) || 0;
-        }
-
-        // 加上環境傷害加成
-        let envDmg = parseFloat(document.getElementById('envDmg').value) || 0;
-        totalDmgBonus += envDmg;
-
-        // 爆傷
-        let totalCritDmg = critDmg;
-        if (document.getElementById('buffEscoffierC1').checked) totalCritDmg += 60;
-
-        // 敵人
-        let charLv = parseFloat(document.getElementById('charLv').value) || 90;
-        let enemyLv = parseFloat(document.getElementById('enemyLv').value) || 90;
-        let enemyRes = parseFloat(document.getElementById('enemyRes').value) || 10;
-
-        // --- 3. 核心運算 ---
-        let finalAtk = baseAtk * (1 + atkPctBonus/100) + flatAtk_green;
-
-        let addedPct = stackCount * STACK_SCALING;
-        let realHit1to5Pct = hits1to5Base + addedPct;
-        let realFinalHitPct = finalHitBase + addedPct;
-
-        let dmgMult = 1 + (totalDmgBonus / 100);
-        let defMult = (charLv + 100) / ((charLv + 100) + (enemyLv + 100));
-
-        let resMult = 0;
-        let r = enemyRes / 100;
-        if (r < 0) resMult = 1 - (r / 2);
-        else if (r <= 0.75) resMult = 1 - r;
-        else resMult = 1 / (1 + 4 * r);
-
-        let critMult = 1 + (totalCritDmg / 100);
-        let effCritRate = Math.min(Math.max(finalCritRate, 0), 100) / 100;
-
-        // --- 4. 顯示更新 ---
-        document.getElementById('displayFinalAtk').innerText = Math.round(finalAtk);
-        let totalExtra = finalAtk - baseAtk;
-        document.getElementById('displayAtkBreakdown').innerText = `( ${baseAtk} + ${Math.round(totalExtra)} )`;
-
-        document.getElementById('displayHit1to5').innerText = realHit1to5Pct.toFixed(1) + "%";
-        document.getElementById('displayFinalHit').innerText = realFinalHitPct.toFixed(1) + "%";
-
-        document.getElementById('f_atk').innerText = Math.round(finalAtk);
-        document.getElementById('f_motion').innerText = (realFinalHitPct/100).toFixed(2);
-        document.getElementById('f_dmg').innerText = dmgMult.toFixed(2);
-        document.getElementById('f_crit').innerText = critMult.toFixed(2);
-        document.getElementById('f_def').innerText = defMult.toFixed(2);
-        document.getElementById('f_res').innerText = resMult.toFixed(2);
-        document.getElementById('f_indep').innerText = indepMult.toFixed(2);
-
-        // --- 5. 傷害輸出 ---
-        function getDmg(motionValuePct) {
-            let base = finalAtk * (motionValuePct / 100);
-            let nonCrit = base * dmgMult * defMult * resMult * indepMult;
-            let crit = nonCrit * critMult;
-            let avg = nonCrit * (1 - effCritRate) + crit * effCritRate;
-            return { non: nonCrit, crit: crit, avg: avg };
-        }
-
-        let d1 = getDmg(realHit1to5Pct);
-        let d3 = getDmg(realFinalHitPct);
-
-        let d2 = { non: d1.non * 5, crit: d1.crit * 5, avg: d1.avg * 5 };
-        let dTotal = { non: d2.non + d3.non, crit: d2.crit + d3.crit, avg: d2.avg + d3.avg };
-
-        function fmt(num) {
-            if(num > 1000000) return (num/10000).toFixed(1) + "萬";
-            return Math.round(num).toLocaleString();
-        }
-
-        document.getElementById('r1_non').innerText = fmt(d1.non);
-        document.getElementById('r1_crit').innerText = fmt(d1.crit);
-        document.getElementById('r1_avg').innerText = fmt(d1.avg);
-
-        document.getElementById('r2_non').innerText = fmt(d2.non);
-        document.getElementById('r2_crit').innerText = fmt(d2.crit);
-        document.getElementById('r2_avg').innerText = fmt(d2.avg);
-
-        document.getElementById('r3_non').innerText = fmt(d3.non);
-        document.getElementById('r3_crit').innerText = fmt(d3.crit);
-        document.getElementById('r3_avg').innerText = fmt(d3.avg);
-
-        document.getElementById('rTotal_non').innerText = fmt(dTotal.non);
-        document.getElementById('rTotal_crit').innerText = fmt(dTotal.crit);
-        document.getElementById('rTotal_avg').innerText = fmt(dTotal.avg);
-    }
-
-    window.onload = calc;
-</script>
+        window.onload = calc;
+    </script>
 
 </body>
+
 </html>
