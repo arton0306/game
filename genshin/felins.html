@@ -398,6 +398,8 @@
                             <div class="checkbox-group">
                                 <label class="chk-option"><input type="checkbox" id="buffAinoC1" checked
                                         onchange="calc()"> 1命 (+80精通)</label>
+                                <label class="chk-option"><input type="checkbox" id="buffAinoArtifact" checked
+                                        onchange="calc()"> 紡月的夜歌 (+120精/10%傷)</label>
                                 <span class="muted" style="margin-left:10px; display:inline;">(月兆滿輝)</span>
                             </div>
                         </div>
@@ -579,6 +581,7 @@
 
             // 愛諾
             if (cb('buffAinoC1')) { emBuff += 80; emBreakdown.push("愛諾1命(80)"); }
+            if (cb('buffAinoArtifact')) { emBuff += 120; emBreakdown.push("紡月(120)"); }
 
             let finalEM = em + emBuff;
 
@@ -602,6 +605,12 @@
                 extraCR += 30; // 滿輝
                 bonusBuff += 10; // 月感電增傷
                 bonusBreakdown.push("穹境(10%)");
+            }
+
+            // 愛諾聖遺物
+            if (cb('buffAinoArtifact')) {
+                bonusBuff += 10;
+                bonusBreakdown.push("紡月(10%)");
             }
 
             // 武器
