@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>菲林斯 (Felins) 月感電傷害計算機</title>
+    <style>
+        :root {
+            --bg-body: #181520;
+            --bg-panel: #221f2e;
+            --border: #4a4260;
+            --accent: #e0c2ff;
+            /* Whitish Purple */
+            --accent-hover: #f0e0ff;
+            --text-main: #f8f4ff;
+            /* Whitish */
+            --text-sub: #dcd6eb;
+            /* Light Purple Grey */
+            --text-highlight: #fff0ff;
+            --text-formula: #d0f0ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 30px;
+            font-size: 19px;
+            line-height: 1.4;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 98%;
+            margin: 0 auto;
+        }
+
+        /* 標題區 */
+        header {
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: baseline;
+        }
+
+        h1 {
+            color: var(--accent);
+            font-size: 32px;
+            margin: 0;
+            border-left: 7px solid var(--accent);
+            padding-left: 15px;
+            text-shadow: 0 0 15px rgba(224, 194, 255, 0.4);
+        }
+
+        .subtitle {
+            color: var(--text-sub);
+            font-size: 18px;
+            margin-left: 20px;
+        }
+
+        /* 儀表板佈局 */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        @media (max-width: 1400px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .right-column {
+                position: static !important;
+            }
+        }
+
+        .left-column,
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .right-column {
+            position: sticky;
+            top: 15px;
+        }
+
+        /* 面板通用樣式 */
+        .panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 25px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-header {
+            font-weight: bold;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-size: 21px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 輸入區塊排版 */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 15px;
+            align-items: flex-start;
+        }
+
+        .sub-row {
+            margin-top: 5px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px dashed #555;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            color: var(--text-sub);
+            font-size: 17px;
+        }
+
+        /* 輸入框樣式 */
+        input[type="number"],
+        select {
+            background: #2b2738;
+            border: 1px solid #554d6b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 110px;
+            text-align: right;
+            font-family: monospace;
+            font-size: 19px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            border-color: var(--accent);
+            background: #363045;
+            outline: none;
+            box-shadow: 0 0 8px rgba(224, 194, 255, 0.2);
+        }
+
+        /* Checkbox 美化 */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .chk-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+            font-size: 17px;
+            cursor: pointer;
+            background: #2f2b3d;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #4a4260;
+            transition: border-color 0.2s;
+        }
+
+        .chk-option:hover {
+            border-color: #999;
+        }
+
+        input[type="checkbox"],
+        input[type="radio"] {
+            accent-color: var(--accent);
+            transform: scale(1.4);
+            cursor: pointer;
+        }
+
+        .unit {
+            color: var(--text-sub);
+            font-size: 15px;
+        }
+
+        .muted {
+            font-size: 15px;
+            color: #aaa;
+            display: block;
+            margin-top: 8px;
+        }
+
+        .breakdown {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 5px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* 結果表格 */
+        .result-highlight {
+            background: rgba(224, 194, 255, 0.05);
+            border: 1px solid var(--accent);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 19px;
+            margin-top: 5px;
+        }
+
+        th,
+        td {
+            text-align: right;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--text-sub);
+            font-weight: normal;
+            font-size: 17px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .val-hl {
+            color: var(--text-highlight);
+            font-weight: bold;
+            font-size: 1.1em;
+            text-shadow: 0 0 5px rgba(224, 194, 255, 0.3);
+        }
+
+        .val-sub {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .total-row {
+            background-color: rgba(224, 194, 255, 0.15);
+            font-weight: bold;
+            font-size: 21px;
+            border-top: 2px solid var(--accent);
+        }
+
+        /* 算式區塊 */
+        .formula-box {
+            background-color: #1e1b26;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: var(--text-sub);
+            border: 1px dashed #666;
+            white-space: pre-wrap;
+            line-height: 1.7;
+            overflow-x: auto;
+        }
+
+        .formula-val {
+            color: var(--text-formula);
+        }
+
+        .note {
+            color: #888;
+            font-size: 15px;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>菲林斯 (Felins) 月感電傷害計算機</h1>
+            <span class="subtitle">隊伍：菲林斯 / 愛諾 / 久綺忍 / 砂糖</span>
+        </header>
+
+        <div class="dashboard">
+            <div class="left-column">
+
+                <!-- 0. 類型選擇 (最優先) -->
+                <div class="panel">
+                    <div class="panel-header">計算類型 (Calculation Type)</div>
+                    <div class="checkbox-group">
+                        <label class="chk-option">
+                            <input type="radio" name="moonType" value="direct" checked onchange="calc()">
+                            直傷月感電 (無視防禦)
+                        </label>
+                        <label class="chk-option">
+                            <input type="radio" name="moonType" value="reaction" onchange="calc()">
+                            反應月感電 (劇變/無視防禦)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">1. 菲林斯 (Felins) 面板</div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label>基礎攻擊 (白值)</label>
+                            <input type="number" id="baseAtk" value="950" oninput="calc()">
+                        </div>
+                        <div class="input-group">
+                            <label>額外攻擊 (綠值)</label>
+                            <input type="number" id="flatAtk" value="1400" oninput="calc()">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label>元素精通</label>
+                            <input type="number" id="EM" value="380" oninput="calc()">
+                            <span class="unit" style="font-size:13px;">(含聖遺物2件+80)</span>
+                        </div>
+                        <div class="input-group">
+                            <label>暴擊率 (%)</label>
+                            <input type="number" id="critRate" value="65.0" oninput="calc()">
+                        </div>
+                        <div class="input-group">
+                            <label>暴擊傷害 (%)</label>
+                            <input type="number" id="critDmg" value="180.0" oninput="calc()">
+                        </div>
+                    </div>
+                    <div class="sub-row">
+                        <div class="input-group" style="margin-bottom:10px;">
+                            <label>武器選擇</label>
+                            <div style="display:flex; gap:15px; align-items:center;">
+                                <select id="weaponSelect" onchange="calc()" style="width:200px;">
+                                    <option value="pjws" selected>和樸鴛 (精1)</option>
+                                    <option value="signature">專武: 血染荒城 (精1)</option>
+                                </select>
+                                <div id="pjwsStackGroup" style="display:flex; align-items:center; gap:5px;">
+                                    <label style="font-size:15px;">層數:</label>
+                                    <input type="number" id="pjwsStacks" value="7" max="7" min="0" oninput="calc()"
+                                        style="width:50px;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="checkbox-group">
+                            <label class="chk-option">
+                                <input type="checkbox" id="setDome" checked onchange="calc()">
+                                穹境視現之夜4件 (戰鬥中: +30%暴率/+10%傷)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">2. 技能與月兆 (Talents & Omen)</div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label>雷霆交响-第1段 (%)</label>
+                            <input type="number" id="burstHit1" value="128.6" oninput="calc()">
+                        </div>
+                        <div class="input-group">
+                            <label>雷霆交响-第2段 (%)</label>
+                            <input type="number" id="burstHit2" value="187.1" oninput="calc()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">3. 隊友增益 (Team Buffs)</div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label style="color:#9effff;">[愛諾] Aino</label>
+                            <div class="checkbox-group">
+                                <label class="chk-option"><input type="checkbox" id="buffAinoC1" checked
+                                        onchange="calc()"> 1命 (+80精通)</label>
+                                <span class="muted" style="margin-left:10px; display:inline;">(月兆滿輝)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label style="color:#aaffaa;">[砂糖] Sucrose</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="sucroseEM" value="650" placeholder="砂糖精通" oninput="calc()"
+                                    style="width:80px;">
+                                <span class="unit">精通</span>
+                            </div>
+                            <div class="checkbox-group" style="margin-top:5px;">
+                                <label class="chk-option"><input type="checkbox" id="buffSucroseEM" checked
+                                        onchange="calc()"> 天賦 (+50+20%)</label>
+                                <label class="chk-option"><input type="checkbox" id="buffTTDS" checked
+                                        onchange="calc()"> 討龍書 (+48%攻)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label style="color:#e0c2ff;">[久綺忍] Kuki</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="kukiHP" value="52000" placeholder="久綺忍生命" oninput="calc()"
+                                    style="width:90px;">
+                                <span class="unit">生命值</span>
+                            </div>
+                            <div class="checkbox-group" style="margin-top:5px;">
+                                <label class="chk-option"><input type="checkbox" id="buffTenacity" checked
+                                        onchange="calc()"> 千岩套 (+20%攻)</label>
+                                <label class="chk-option"><input type="checkbox" id="buffKey" checked onchange="calc()">
+                                    聖顯之鑰 (轉精通)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="border:0; border-top:1px solid #4a4260; margin: 15px 0;">
+
+                    <div class="row">
+                        <div class="input-group">
+                            <label style="color:#fff;">[其它] Other</label>
+                            <div class="input-wrapper">
+                                <label class="chk-option"><input type="checkbox" id="buffResonance" checked
+                                        onchange="calc()"> 砂糖月耀共嗚</label>
+                                <span id="resBonusVal" class="unit" style="margin-left:5px;">(0%)</span>
+                            </div>
+                            <div class="input-wrapper" style="margin-top:5px;">
+                                <label>使用者增傷 (%)</label>
+                                <input type="number" id="userBonus" value="0" oninput="calc()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">4. 敵人 (Enemy)</div>
+                    <div class="row">
+                        <div class="input-group">
+                            <label>雷元素抗性 (%)</label>
+                            <input type="number" id="enemyRes" value="-30" oninput="calc()">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="right-column">
+
+                <div class="panel result-highlight">
+                    <div class="panel-header" style="border-bottom-color:rgba(0,0,0,0.1); color:var(--accent);">
+                        <span>計算結果 (Results)</span>
+                    </div>
+
+                    <div style="margin-bottom:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:#aaa;">最終面板攻擊力</span>
+                            <span id="resFinalAtk" style="font-weight:bold; color:white;">0</span>
+                        </div>
+                        <div id="atkBreakdown" class="breakdown"></div>
+                    </div>
+
+                    <div style="margin-bottom:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span style="color:#aaa;">最終面板精通</span>
+                            <div style="text-align:right;">
+                                <span id="resFinalEM" style="font-weight:bold; color:white;">0</span>
+                                <span id="moonBonusDisplay"
+                                    style="color:#aaa; font-size:14px; margin-left:5px;">(+0%)</span>
+                            </div>
+                        </div>
+                        <div id="emBreakdown" class="breakdown"></div>
+                    </div>
+
+                    <div id="resultTableContainer"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header" style="font-size:16px; color:var(--text-sub);">
+                        [第2段暴擊] 算式驗證
+                    </div>
+                    <pre id="formula" class="formula-box"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 工具函數 ---
+        function pct(x) { return parseFloat(x) / 100.0; }
+        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+        function resMultiplier(r) {
+            r = pct(r);
+            if (r < 0) return 1 - (r / 2);
+            else if (r <= 0.75) return 1 - r;
+            else return 1 / (1 + 4 * r);
+        }
+
+        // --- 主計算函數 ---
+        function calc() {
+            const v = id => parseFloat(document.getElementById(id).value) || 0;
+            const cb = id => document.getElementById(id).checked;
+
+            // UI 控制
+            const wep = document.getElementById('weaponSelect').value;
+            document.getElementById('pjwsStackGroup').style.display = (wep === 'pjws') ? 'flex' : 'none';
+
+            // 1. 基礎屬性
+            let baseAtk = v('baseAtk');
+            let flatAtk = v('flatAtk');
+            let em = v('EM');
+            let cr = v('critRate');
+            let cd = v('critDmg');
+
+            // --- 攻擊力計算 ---
+            let atkPctBuff = 0;
+            let atkBreakdown = [];
+
+            // 武器
+            if (wep === 'pjws') {
+                let stacks = Math.min(7, Math.max(0, v('pjwsStacks')));
+                let val = 3.2 * stacks;
+                atkPctBuff += val;
+                atkBreakdown.push(`和樸鴛(${val.toFixed(1)}%)`);
+            }
+
+            // 隊友
+            if (cb('buffTenacity')) { atkPctBuff += 20; atkBreakdown.push("千岩(20%)"); }
+            if (cb('buffTTDS')) { atkPctBuff += 48; atkBreakdown.push("討龍(48%)"); }
+
+            let finalAtk = baseAtk * (1 + pct(atkPctBuff)) + flatAtk;
+
+            document.getElementById('resFinalAtk').innerText = Math.round(finalAtk);
+            document.getElementById('atkBreakdown').innerText =
+                `白值(${baseAtk}) × (1 + ${atkBreakdown.join('+') || '0%'}) + 綠值(${flatAtk})`;
+
+
+            // --- 精通計算 ---
+            let emBuff = 0;
+            let emBreakdown = [];
+
+            // 聖遺物 (2件套已在面板)
+
+            // 砂糖
+            let sEM = v('sucroseEM');
+            if (cb('buffSucroseEM')) {
+                let val = 50 + (sEM * 0.2);
+                emBuff += val;
+                emBreakdown.push(`砂糖(${Math.round(val)})`);
+            }
+
+            // 久綺忍
+            if (cb('buffKey')) {
+                let kHP = v('kukiHP');
+                let val = kHP * 0.002;
+                emBuff += val;
+                emBreakdown.push(`聖顯(${Math.round(val)})`);
+            }
+
+            // 愛諾
+            if (cb('buffAinoC1')) { emBuff += 80; emBreakdown.push("愛諾1命(80)"); }
+
+            let finalEM = em + emBuff;
+
+            document.getElementById('resFinalEM').innerText = Math.round(finalEM);
+            document.getElementById('emBreakdown').innerText =
+                `面板(${em}) + ${emBreakdown.join(' + ') || '0'}`;
+
+            // 異化增傷 (Alienated Bonus) - 基於精通
+            // 公式: (6 * EM) / (EM + 2000) * 100%
+            let alienatedBonus = (6 * finalEM) / (finalEM + 2000) * 100;
+            document.getElementById('moonBonusDisplay').innerText = `(+${alienatedBonus.toFixed(1)}% 月感電傷)`;
+
+
+            // --- 暴擊/增傷計算 ---
+            let extraCR = 0;
+            let bonusBuff = 0;
+            let bonusBreakdown = [];
+
+            // 聖遺物 (4件套戰鬥中生效)
+            if (cb('setDome')) {
+                extraCR += 30; // 滿輝
+                bonusBuff += 10; // 月感電增傷
+                bonusBreakdown.push("穹境(10%)");
+            }
+
+            // 武器
+            if (wep === 'signature') {
+                bonusBuff += 30;
+                bonusBreakdown.push("專武(30%)");
+            }
+            // 和樸鴛增傷不計入月感電 (僅攻擊力)
+
+            // 其它增傷
+            // 砂糖月耀共嗚
+            let resonanceBonus = 0;
+            if (cb('buffResonance')) {
+                resonanceBonus = sEM * 0.03; // 係數待確認，暫定 0.03%
+                bonusBuff += resonanceBonus;
+                bonusBreakdown.push(`共嗚(${resonanceBonus.toFixed(1)}%)`);
+            }
+            document.getElementById('resBonusVal').innerText = `(${resonanceBonus.toFixed(1)}%)`;
+
+            // 使用者自訂
+            let uBonus = v('userBonus');
+            if (uBonus > 0) {
+                bonusBuff += uBonus;
+                bonusBreakdown.push(`自訂(${uBonus}%)`);
+            }
+
+            let finalCR = Math.min(100, cr + extraCR);
+            let finalCD = cd;
+
+
+            // --- 月感電計算 ---
+            let burstHit1 = v('burstHit1');
+            let burstHit2 = v('burstHit2');
+            let moonType = document.querySelector('input[name="moonType"]:checked').value;
+
+            let enemyRes = v('enemyRes'); // 直接輸入
+            let resMult = resMultiplier(enemyRes);
+
+            // 防禦乘區: 直傷月感電無視防禦，所以 defMult = 1
+            let defMult = 1.0;
+
+            // 月兆增益 (滿輝)
+            let omenBonus = 20;
+
+            // 天賦基礎增傷 (獨立乘區)
+            let talentIndepMult = 1.14;
+
+            let formulaText = "";
+
+            function calcHit(multiplier) {
+                if (moonType === 'direct') {
+                    // 直傷月感電
+                    let mult = (multiplier / 100) * 3;
+
+                    // 增傷區: 異化 + 月兆 + 聖遺物 + 武器 + 其它
+                    let totalBonus = alienatedBonus + omenBonus + bonusBuff;
+
+                    let bonusMult = 1 + pct(totalBonus);
+                    let critMult = 1 + pct(finalCD);
+
+                    // 基礎傷害 x 天賦獨立乘區
+                    let baseDmg = finalAtk * mult * talentIndepMult;
+
+                    let nonCrit = baseDmg * bonusMult * defMult * resMult;
+                    let crit = nonCrit * critMult;
+                    let avg = nonCrit * (1 - pct(finalCR)) + crit * pct(finalCR);
+
+                    return { non: nonCrit, crit: crit, avg: avg, base: baseDmg, bonus: bonusMult };
+                } else {
+                    // 反應月感電
+                    // 公式: 1446.85 * 1.8 * (1 + 天賦14%) * (1 + 精通曲線 + 月兆 + 其他) * 抗性 * 暴擊
+                    let baseReaction = 1446.85;
+                    let reactionMult = 1.8;
+                    let baseBonus = 0.14; // 天賦 14% 作為基礎提升
+
+                    // 增傷區: 精通曲線 + 月兆 + 其他
+                    let totalReactBonus = alienatedBonus + omenBonus + bonusBuff;
+
+                    let baseDmg = baseReaction * reactionMult * (1 + baseBonus);
+                    let bonusMult = 1 + pct(totalReactBonus);
+                    let critMult = 1 + pct(finalCD);
+
+                    let nonCrit = baseDmg * bonusMult * resMult;
+                    let crit = nonCrit * critMult;
+                    let avg = nonCrit * (1 - pct(finalCR)) + crit * pct(finalCR);
+
+                    return { non: nonCrit, crit: crit, avg: avg, base: baseDmg, bonus: bonusMult };
+                }
+            }
+
+            let d1 = calcHit(burstHit1);
+            let d2 = calcHit(burstHit2);
+
+            // 輸出
+            renderTable(d1, d2);
+
+            if (moonType === 'direct') {
+                let bonusStr = bonusBreakdown.length > 0 ? ` + ${bonusBreakdown.join('+')}` : '';
+                formulaText =
+                    `類型: 直傷月感電 (Direct Moon-EC)\n` +
+                    `基礎傷害 = 攻擊力(${Math.round(finalAtk)}) × 第2段倍率(${burstHit2}% × 3) × 天賦(1.14) = ${Math.round(d2.base)}\n` +
+                    `增傷乘區 = 1 + 異化(${alienatedBonus.toFixed(1)}%) + 月兆(20%)${bonusStr} = ${d2.bonus.toFixed(2)}\n` +
+                    `防禦乘區 = 1.0 (無視防禦), 抗性乘區 = ${resMult.toFixed(2)}\n` +
+                    `--------------------------------\n` +
+                    `第2段暴擊 = ${Math.round(d2.base)} × ${d2.bonus.toFixed(2)} × (1+${pct(finalCD)}) × 1.0 × ${resMult.toFixed(2)} = ${Math.round(d2.crit)}`;
+            } else {
+                let bonusStr = bonusBreakdown.length > 0 ? ` + ${bonusBreakdown.join('+')}` : '';
+                formulaText =
+                    `類型: 反應月感電 (Reaction Moon-EC)\n` +
+                    `基礎傷害 = 1446.85 × 1.8 × (1 + 天賦14%) = ${Math.round(d2.base)}\n` +
+                    `增傷乘區 = 1 + 異化(${alienatedBonus.toFixed(1)}%) + 月兆(20%)${bonusStr} = ${d2.bonus.toFixed(2)}\n` +
+                    `抗性乘區 = ${resMult.toFixed(2)}\n` +
+                    `--------------------------------\n` +
+                    `暴擊傷害 = ${Math.round(d2.base)} × ${d2.bonus.toFixed(2)} × (1+${pct(finalCD)}) × ${resMult.toFixed(2)} = ${Math.round(d2.crit)}`;
+            }
+
+            document.getElementById('formula').innerText = formulaText;
+        }
+
+        function renderTable(d1, d2) {
+            const fmt = n => Math.round(n).toLocaleString();
+            let html = `
+        <table>
+            <thead>
+                <tr>
+                    <th>類型</th>
+                    <th>未暴擊</th>
+                    <th>暴擊</th>
+                    <th>期望</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>第1段</td>
+                    <td>${fmt(d1.non)}</td>
+                    <td class="val-hl">${fmt(d1.crit)}</td>
+                    <td>${fmt(d1.avg)}</td>
+                </tr>
+                <tr>
+                    <td>第2段</td>
+                    <td>${fmt(d2.non)}</td>
+                    <td class="val-hl">${fmt(d2.crit)}</td>
+                    <td>${fmt(d2.avg)}</td>
+                </tr>
+                <tr class="total-row">
+                    <td>總傷害</td>
+                    <td>${fmt(d1.non + d2.non)}</td>
+                    <td class="val-hl">${fmt(d1.crit + d2.crit)}</td>
+                    <td>${fmt(d1.avg + d2.avg)}</td>
+                </tr>
+            </tbody>
+        </table>
+    `;
+            document.getElementById('resultTableContainer').innerHTML = html;
+        }
+
+        // Init
+        window.onload = calc;
+    </script>
+</body>
+
+</html>
